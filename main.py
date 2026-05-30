@@ -1,8 +1,8 @@
 import os
 import csv
 import logging
-from telegram import Update
-from telegram.ext import Application, CommandHandler, ContextTypes
+from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
+from telegram.ext import Application, CommandHandler, CallbackQueryHandler, ContextTypes
 from dotenv import load_dotenv
 import google.generativeai as genai
 
@@ -64,26 +64,81 @@ def add_to_csv(ism, familya, vazn, maqsad):
     write_csv(data)
     return next_id
 
-# Bot commands
+# /start - Inline keyboard bilan
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    keyboard = [
+        [InlineKeyboardButton("➕ Yangi odam qo'shish", callback_data='add')],
+        [InlineKeyboardButton("📋 Ro'yxatni ko'rish", callback_data='list')],
+        [InlineKeyboardButton("🔥 Kaloriya hisoblash", callback_data='calorie')],
+        [InlineKeyboardButton("🗑️ O'chirish", callback_data='delete')],
+        [InlineKeyboardButton("📱 Mini App", web_app_url="https://nimayedimbot-production.up.railway.app")],
+    ]
+    
+    reply_markup = InlineKeyboardMarkup(keyboard)
+    
     await update.message.reply_text(
         "👋 Salom! Men kaloriya hisoblovchi botman.\n\n"
-        "📝 Buyruqlar:\n"
-        "/add ism familya vazn maqsad - Yangi odam qo'shish\n"
-        "/calorie <ovqat> - Kaloriya hisoblash\n"
-        "/list - Ro'yxat\n"
-        "/delete <id> - O'chirish"
+        "Quyidagi tugmalardan birini tanlang:",
+        reply_markup=reply_markup
     )
 
-async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text(
-        "📖 Yordam:\n"
-        "/add ism familya vazn maqsad\n"
-        "/calorie ovqat nomi\n"
-        "/list - Barcha odamlar\n"
-        "/delete <id>"
-    )
+# Inline keyboard bosilganda
+async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    query = update.callback_query
+    await query.answer()
+    
+    if query.data == 'add':
+        await query.message.reply_text(
+            "➕ Yangi odam qo'shish uchun quyidagi formatda yozing:\n\n"
+            "/add ism familya vazn maqsad\n\n"
+            "Masalan:\n"
+            "/add Ali Valiyev 70 yog'yo'qotish"
+        )
+    
+    elif query.data == 'list':
+        data = read_csv()
+        if not data:
+            await query.message.reply_text("📋 Hozircha hech kim yo'q")
+            return
+        
+        message = "📋 Barcha odamlar:\n\n"
+        for person in data:
+            message += f"🆔 {person['id']} - {person['ism']} {person['familya']}, {person['vazn']}kg\n"
+            message += f"   Maqsad: {person['maqsad']}\n\n"
+        
+        await query.message.reply_text(message)
+    
+    elif query.data == 'calorie':
+        await query.message.reply_text(
+            "🔥 Kaloriya hisoblash uchun ovqat nomini yozing:\n\n"
+            "Masalan:\n"
+            "non 2 bo'lak\n"
+            "osh 1 porsiyasi\n"
+            "olma 1 dona"
+        )
+    
+    elif query.data == 'delete':
+        await query.message.reply_text(
+            "🗑️ O'chirish uchun ID ni yozing:\n\n"
+            "Masalan:\n"
+            "/delete 1"
+        )
 
+# Oddiy matnli xabarlar (kaloriya hisoblash uchun)
+async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    text = update.message.text
+    
+    # Agar bu buyruq bo'lmasa, kaloriya hisoblaymiz
+    if not text.startswith('/'):
+        try:
+            food = text
+            response = model.generate_content(f"{food} kaloriyasi nechta? Faqat raqam va kcal bilan javob bering.")
+            calorie = response.text.strip()
+            await update.message.reply_text(f"🍽️ {food}\n🔥 {calorie}")
+        except Exception as e:
+            await update.message.reply_text(f"❌ Xatolik: {str(e)}")
+
+# /add buyrug'i
 async def add_person(update: Update, context: ContextTypes.DEFAULT_TYPE):
     args = context.args
     if len(args) < 4:
@@ -99,33 +154,7 @@ async def add_person(update: Update, context: ContextTypes.DEFAULT_TYPE):
     except Exception as e:
         await update.message.reply_text(f"❌ Xatolik: {str(e)}")
 
-async def calculate_calorie(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    if not context.args:
-        await update.message.reply_text("❌ Ovqat nomini kiriting!")
-        return
-    
-    food = ' '.join(context.args)
-    
-    try:
-        response = model.generate_content(f"{food} da nechta kaloriya bor? Faqat raqam va kcal bilan javob bering.")
-        calorie = response.text.strip()
-        await update.message.reply_text(f"🍽️ {food}\n🔥 {calorie}")
-    except Exception as e:
-        await update.message.reply_text(f"❌ Xatolik: {str(e)}")
-
-async def list_people(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    data = read_csv()
-    if not data:
-        await update.message.reply_text("📋 Hozircha hech kim yo'q")
-        return
-    
-    message = "📋 Barcha odamlar:\n\n"
-    for person in data:
-        message += f"🆔 {person['id']} - {person['ism']} {person['familya']}, {person['vazn']}kg\n"
-        message += f"   Maqsad: {person['maqsad']}\n\n"
-    
-    await update.message.reply_text(message)
-
+# /delete buyrug'i
 async def delete_person(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not context.args:
         await update.message.reply_text("❌ ID kiriting!")
@@ -142,16 +171,36 @@ async def delete_person(update: Update, context: ContextTypes.DEFAULT_TYPE):
     write_csv(new_data)
     await update.message.reply_text(f"✅ ID {delete_id} o'chirildi")
 
+# /help
+async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    keyboard = [
+        [InlineKeyboardButton("➕ Yangi odam qo'shish", callback_data='add')],
+        [InlineKeyboardButton("📋 Ro'yxatni ko'rish", callback_data='list')],
+        [InlineKeyboardButton("🔥 Kaloriya hisoblash", callback_data='calorie')],
+    ]
+    
+    reply_markup = InlineKeyboardMarkup(keyboard)
+    
+    await update.message.reply_text(
+        "📖 Yordam:\n\n"
+        "Quyidagi tugmalardan birini tanlang:",
+        reply_markup=reply_markup
+    )
+
 def main():
     init_csv()
     application = Application.builder().token(TELEGRAM_BOT_TOKEN).build()
     
+    # Handlers
     application.add_handler(CommandHandler("start", start))
     application.add_handler(CommandHandler("help", help_command))
     application.add_handler(CommandHandler("add", add_person))
-    application.add_handler(CommandHandler("calorie", calculate_calorie))
-    application.add_handler(CommandHandler("list", list_people))
     application.add_handler(CommandHandler("delete", delete_person))
+    application.add_handler(CallbackQueryHandler(button_handler))
+    application.add_handler(CallbackQueryHandler(lambda u, c: None, pattern='^(add|list|calorie|delete)$'))
+    
+    # Oddiy xabarlar (kaloriya uchun)
+    application.add_handler(CallbackQueryHandler(lambda u, c: None))  # Bu barcha callbacklarni qayta ishlash uchun
     
     logger.info("✅ Bot ishga tushdi...")
     application.run_polling()
