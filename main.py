@@ -4,7 +4,7 @@ import logging
 from telegram import Update
 from telegram.ext import Application, CommandHandler, ContextTypes
 from dotenv import load_dotenv
-from openai import OpenAI
+import google.generativeai as genai
 
 # Load environment variables
 load_dotenv()
@@ -18,10 +18,11 @@ logger = logging.getLogger(__name__)
 
 # Get tokens from environment
 TELEGRAM_BOT_TOKEN = os.getenv('TELEGRAM_BOT_TOKEN')
-OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
+GEMINI_API_KEY = os.getenv('GEMINI_API_KEY')
 
-# Setup OpenAI (NEW VERSION)
-client = OpenAI(api_key=OPENAI_API_KEY)
+# Setup Google Gemini
+genai.configure(api_key=GEMINI_API_KEY)
+model = genai.GenerativeModel('gemini-pro')
 
 # CSV File setup
 CSV_FILE = 'data.csv'
@@ -106,14 +107,8 @@ async def calculate_calorie(update: Update, context: ContextTypes.DEFAULT_TYPE):
     food = ' '.join(context.args)
     
     try:
-        response = client.chat.completions.create(
-            model="gpt-3.5-turbo",
-            messages=[
-                {"role": "system", "content": "Kaloriya hisoblovchi bot. Faqat raqam va kcal bilan javob bering."},
-                {"role": "user", "content": f"{food} da nechta kaloriya bor?"}
-            ]
-        )
-        calorie = response.choices[0].message.content.strip()
+        response = model.generate_content(f"{food} da nechta kaloriya bor? Faqat raqam va kcal bilan javob bering.")
+        calorie = response.text.strip()
         await update.message.reply_text(f"🍽️ {food}\n🔥 {calorie}")
     except Exception as e:
         await update.message.reply_text(f"❌ Xatolik: {str(e)}")
