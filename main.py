@@ -22,7 +22,7 @@ GEMINI_API_KEY = os.getenv('GEMINI_API_KEY')
 
 # Setup Google Gemini
 genai.configure(api_key=GEMINI_API_KEY)
-model = genai.GenerativeModel('gemini-3.5-flash')
+model = genai.GenerativeModel('gemini-1.5-flash')
 
 # CSV File setup
 CSV_FILE = 'data.csv'
@@ -71,7 +71,6 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         [InlineKeyboardButton("📋 Ro'yxatni ko'rish", callback_data='list')],
         [InlineKeyboardButton("🔥 Kaloriya hisoblash", callback_data='calorie')],
         [InlineKeyboardButton("🗑️ O'chirish", callback_data='delete')],
-        [InlineKeyboardButton("📱 Mini App", web_app_url="https://nimayedimbot-production.up.railway.app")],
     ]
     
     reply_markup = InlineKeyboardMarkup(keyboard)
@@ -124,20 +123,6 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
             "/delete 1"
         )
 
-# Oddiy matnli xabarlar (kaloriya hisoblash uchun)
-async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    text = update.message.text
-    
-    # Agar bu buyruq bo'lmasa, kaloriya hisoblaymiz
-    if not text.startswith('/'):
-        try:
-            food = text
-            response = model.generate_content(f"{food} kaloriyasi nechta? Faqat raqam va kcal bilan javob bering.")
-            calorie = response.text.strip()
-            await update.message.reply_text(f"🍽️ {food}\n🔥 {calorie}")
-        except Exception as e:
-            await update.message.reply_text(f"❌ Xatolik: {str(e)}")
-
 # /add buyrug'i
 async def add_person(update: Update, context: ContextTypes.DEFAULT_TYPE):
     args = context.args
@@ -187,6 +172,20 @@ async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         reply_markup=reply_markup
     )
 
+# Oddiy matnli xabarlar (kaloriya hisoblash uchun)
+async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    text = update.message.text
+    
+    # Agar bu buyruq bo'lmasa, kaloriya hisoblaymiz
+    if not text.startswith('/'):
+        try:
+            food = text
+            response = model.generate_content(f"{food} kaloriyasi nechta? Faqat raqam va kcal bilan javob bering.")
+            calorie = response.text.strip()
+            await update.message.reply_text(f"🍽️ {food}\n🔥 {calorie}")
+        except Exception as e:
+            await update.message.reply_text(f"❌ Xatolik: {str(e)}")
+
 def main():
     init_csv()
     application = Application.builder().token(TELEGRAM_BOT_TOKEN).build()
@@ -197,10 +196,9 @@ def main():
     application.add_handler(CommandHandler("add", add_person))
     application.add_handler(CommandHandler("delete", delete_person))
     application.add_handler(CallbackQueryHandler(button_handler))
-    application.add_handler(CallbackQueryHandler(lambda u, c: None, pattern='^(add|list|calorie|delete)$'))
     
     # Oddiy xabarlar (kaloriya uchun)
-    application.add_handler(CallbackQueryHandler(lambda u, c: None))  # Bu barcha callbacklarni qayta ishlash uchun
+    application.add_handler(CallbackQueryHandler(lambda u, c: None))
     
     logger.info("✅ Bot ishga tushdi...")
     application.run_polling()
