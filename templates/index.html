@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kaloriya Tracker</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        
+        .header {
+            background: white;
+            border-radius: 20px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+        
+        .header h1 {
+            color: #667eea;
+            font-size: 24px;
+            margin-bottom: 10px;
+        }
+        
+        .card {
+            background: white;
+            border-radius: 20px;
+            padding: 20px;
+            margin-bottom: 15px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        
+        .form-group {
+            margin-bottom: 15px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            color: #333;
+            font-weight: 500;
+        }
+        
+        .form-group input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 16px;
+        }
+        
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            width: 100%;
+            margin-top: 10px;
+        }
+        
+        .person-card {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 10px;
+        }
+        
+        .person-card h3 {
+            color: #667eea;
+            margin-bottom: 5px;
+        }
+        
+        .delete-btn {
+            background: #ff4757;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+        
+        .stats {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+        
+        .stat-box {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+        }
+        
+        .stat-box h2 {
+            font-size: 32px;
+            margin-bottom: 5px;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <h1>🔥 Kaloriya Tracker</h1>
+            <p>Salomatlik yo'lidagi hamrohingiz</p>
+        </div>
+        
+        <!-- Stats -->
+        <div class="card">
+            <div class="stats">
+                <div class="stat-box">
+                    <h2 id="totalPeople">0</h2>
+                    <p>Jami odamlar</p>
+                </div>
+                <div class="stat-box">
+                    <h2 id="totalCalories">0</h2>
+                    <p>Kaloriya</p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Add Person Form -->
+        <div class="card">
+            <h2 style="margin-bottom: 15px;">➕ Yangi qo'shish</h2>
+            <div class="form-group">
+                <label>Ism</label>
+                <input type="text" id="ism" placeholder="Ismingizni kiriting">
+            </div>
+            <div class="form-group">
+                <label>Familya</label>
+                <input type="text" id="familya" placeholder="Familyangizni kiriting">
+            </div>
+            <div class="form-group">
+                <label>Vazn (kg)</label>
+                <input type="number" id="vazn" placeholder="70">
+            </div>
+            <div class="form-group">
+                <label>Maqsad</label>
+                <input type="text" id="maqsad" placeholder="Masalan: yog'yo'qotish">
+            </div>
+            <button class="btn" onclick="addPerson()">Saqlash</button>
+        </div>
+        
+        <!-- Calorie Calculator -->
+        <div class="card">
+            <h2 style="margin-bottom: 15px;">🍔 Kaloriya hisoblash</h2>
+            <div class="form-group">
+                <input type="text" id="food" placeholder="Ovqat nomi (masalan: non 2 bo'lak)">
+            </div>
+            <button class="btn" onclick="calculateCalorie()">Hisoblash</button>
+            <div id="calorieResult" style="margin-top: 15px; font-weight: bold; color: #667eea;"></div>
+        </div>
+        
+        <!-- People List -->
+        <div class="card">
+            <h2 style="margin-bottom: 15px;">📋 Ro'yxat</h2>
+            <div id="peopleList">
+                <div class="loading">Yuklanmoqda...</div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        const tg = window.Telegram.WebApp;
+        tg.expand();
+        
+        // Load people on startup
+        loadPeople();
+        
+        async function loadPeople() {
+            const response = await fetch('/api/people');
+            const people = await response.json();
+            
+            document.getElementById('totalPeople').textContent = people.length;
+            
+            const listDiv = document.getElementById('peopleList');
+            if (people.length === 0) {
+                listDiv.innerHTML = '<p style="text-align: center; color: #999;">Hozircha hech kim yo\'q</p>';
+                return;
+            }
+            
+            let html = '';
+            people.forEach(person => {
+                html += `
+                    <div class="person-card">
+                        <h3>${person.ism} ${person.familya}</h3>
+                        <p>⚖️ ${person.vazn} kg</p>
+                        <p>🎯 ${person.maqsad}</p>
+                        <button class="delete-btn" onclick="deletePerson('${person.id}')">🗑️ O'chirish</button>
+                    </div>
+                `;
+            });
+            listDiv.innerHTML = html;
+        }
+        
+        async function addPerson() {
+            const ism = document.getElementById('ism').value;
+            const familya = document.getElementById('familya').value;
+            const vazn = document.getElementById('vazn').value;
+            const maqsad = document.getElementById('maqsad').value;
+            
+            if (!ism || !familya || !vazn) {
+                tg.showAlert('Iltimos, barcha maydonlarni to\'ldiring!');
+                return;
+            }
+            
+            const response = await fetch('/api/add', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ism, familya, vazn, maqsad})
+            });
+            
+            const result = await response.json();
+            if (result.success) {
+                tg.showAlert('Muvaffaqiyatli qo\'shildi!');
+                document.getElementById('ism').value = '';
+                document.getElementById('familya').value = '';
+                document.getElementById('vazn').value = '';
+                document.getElementById('maqsad').value = '';
+                loadPeople();
+            }
+        }
+        
+        async function deletePerson(id) {
+            await fetch(`/api/delete/${id}`, {method: 'DELETE'});
+            loadPeople();
+        }
+        
+        async function calculateCalorie() {
+            const food = document.getElementById('food').value;
+            if (!food) {
+                tg.showAlert('Ovqat nomini kiriting!');
+                return;
+            }
+            
+            const response = await fetch('/api/calorie', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({food})
+            });
+            
+            const result = await response.json();
+            if (result.success) {
+                document.getElementById('calorieResult').textContent = `🔥 ${result.calorie}`;
+            } else {
+                tg.showAlert('Xatolik: ' + result.error);
+            }
+        }
+    </script>
+</body>
+</html>
