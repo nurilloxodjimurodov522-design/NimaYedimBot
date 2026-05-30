@@ -2,7 +2,7 @@ import os
 import csv
 import logging
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
-from telegram.ext import Application, CommandHandler, CallbackQueryHandler, ContextTypes
+from telegram.ext import Application, CommandHandler, CallbackQueryHandler, ContextTypes, MessageHandler, filters
 from dotenv import load_dotenv
 import google.generativeai as genai
 
@@ -197,8 +197,8 @@ def main():
     application.add_handler(CommandHandler("delete", delete_person))
     application.add_handler(CallbackQueryHandler(button_handler))
     
-    # Oddiy xabarlar (kaloriya uchun)
-    application.add_handler(CallbackQueryHandler(lambda u, c: None))
+    # Oddiy xabarlar uchun (kaloriya hisoblash)
+    application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
     
     logger.info("✅ Bot ishga tushdi...")
     application.run_polling()
