@@ -387,7 +387,11 @@ def get_recommendations(user_id):
         return jsonify({'success': False, 'error': str(e)})
 
 if __name__ == '__main__':
-    init_files()
-    port = int(os.environ.get('PORT', 5050))
+    init_csv()
+    # Railway bergan portni olish, agar bo'lmasa 5000 dan foydalanish
+    port = int(os.environ.get('PORT', 5000))
+    
     print(f"🚀 Server ishga tushmoqda: http://0.0.0.0:{port}")
-    app.run(host='0.0.0.0', port=port, debug=True)
+    
+    # Muhim: host='0.0.0.0' bo'lishi shart!
+    app.run(host='0.0.0.0', port=port, debug=False)
