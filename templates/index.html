@@ -3,8 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Kaloriya Tracker</title>
+    <title>Kaloriya Tracker Pro</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
         * {
             margin: 0;
@@ -13,39 +14,139 @@
         }
         
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
-            padding: 20px;
+            color: #1a1a1a;
         }
         
         .container {
-            max-width: 600px;
+            max-width: 480px;
             margin: 0 auto;
+            padding: 20px;
         }
         
+        /* Header */
         .header {
             background: white;
             border-radius: 20px;
             padding: 20px;
-            margin-bottom: 20px;
+            margin-bottom: 15px;
             box-shadow: 0 10px 30px rgba(0,0,0,0.2);
         }
         
-        .header h1 {
-            color: #667eea;
-            font-size: 24px;
-            margin-bottom: 10px;
+        .profile-section {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 15px;
         }
         
-        .card {
+        .profile-pic {
+            width: 70px;
+            height: 70px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 3px solid #667eea;
+        }
+        
+        .profile-info h1 {
+            font-size: 20px;
+            font-weight: 700;
+            color: #1a1a1a;
+            margin-bottom: 5px;
+        }
+        
+        .profile-info p {
+            color: #666;
+            font-size: 14px;
+        }
+        
+        /* Stats Cards */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        
+        .stat-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 15px;
+            border-radius: 15px;
+            text-align: center;
+        }
+        
+        .stat-card.warning {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        }
+        
+        .stat-card.success {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+        }
+        
+        .stat-card h2 {
+            font-size: 28px;
+            font-weight: 700;
+            margin-bottom: 5px;
+        }
+        
+        .stat-card p {
+            font-size: 12px;
+            opacity: 0.9;
+        }
+        
+        /* Navigation */
+        .nav-tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+            background: white;
+            padding: 5px;
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        
+        .nav-tab {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            background: transparent;
+            color: #666;
+            font-weight: 600;
+            cursor: pointer;
+            border-radius: 10px;
+            transition: all 0.3s;
+        }
+        
+        .nav-tab.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        
+        /* Content Sections */
+        .section {
             background: white;
             border-radius: 20px;
             padding: 20px;
             margin-bottom: 15px;
             box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            display: none;
         }
         
+        .section.active {
+            display: block;
+        }
+        
+        .section-title {
+            font-size: 18px;
+            font-weight: 700;
+            margin-bottom: 15px;
+            color: #1a1a1a;
+        }
+        
+        /* Forms */
         .form-group {
             margin-bottom: 15px;
         }
@@ -55,136 +156,396 @@
             margin-bottom: 5px;
             color: #333;
             font-weight: 500;
+            font-size: 14px;
         }
         
-        .form-group input {
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
             width: 100%;
             padding: 12px;
             border: 2px solid #e0e0e0;
             border-radius: 10px;
-            font-size: 16px;
+            font-size: 15px;
+            transition: border 0.3s;
         }
         
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        /* Buttons */
         .btn {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
             border: none;
-            padding: 15px 30px;
-            border-radius: 10px;
-            font-size: 16px;
+            padding: 14px 24px;
+            border-radius: 12px;
+            font-size: 15px;
             font-weight: 600;
             cursor: pointer;
             width: 100%;
-            margin-top: 10px;
+            transition: transform 0.2s;
         }
         
-        .person-card {
+        .btn:active {
+            transform: scale(0.98);
+        }
+        
+        .btn-secondary {
+            background: #f0f0f0;
+            color: #333;
+        }
+        
+        .btn-success {
+            background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+        }
+        
+        .btn-danger {
+            background: linear-gradient(135deg, #eb3349 0%, #f45c43 100%);
+        }
+        
+        /* Food Cards */
+        .food-card {
             background: #f8f9fa;
-            border-radius: 10px;
+            border-radius: 12px;
             padding: 15px;
             margin-bottom: 10px;
+            display: flex;
+            gap: 15px;
+            align-items: center;
         }
         
-        .person-card h3 {
-            color: #667eea;
+        .food-photo {
+            width: 60px;
+            height: 60px;
+            border-radius: 10px;
+            object-fit: cover;
+        }
+        
+        .food-info {
+            flex: 1;
+        }
+        
+        .food-info h3 {
+            font-size: 16px;
             margin-bottom: 5px;
         }
         
-        .delete-btn {
-            background: #ff4757;
-            color: white;
-            border: none;
-            padding: 8px 15px;
-            border-radius: 5px;
-            cursor: pointer;
+        .food-info p {
+            font-size: 13px;
+            color: #666;
+        }
+        
+        .food-calories {
+            font-weight: 700;
+            color: #667eea;
+            font-size: 18px;
+        }
+        
+        .food-actions {
+            display: flex;
+            gap: 8px;
             margin-top: 10px;
         }
         
-        .stats {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 10px;
+        .food-actions button {
+            flex: 1;
+            padding: 8px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 13px;
         }
         
-        .stat-box {
+        /* Progress Bar */
+        .progress-container {
+            margin: 15px 0;
+        }
+        
+        .progress-bar {
+            height: 12px;
+            background: #e0e0e0;
+            border-radius: 6px;
+            overflow: hidden;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+            transition: width 0.5s ease;
+        }
+        
+        .progress-text {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 8px;
+            font-size: 13px;
+            color: #666;
+        }
+        
+        /* Recommendations */
+        .recommendation-box {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
-            padding: 15px;
-            border-radius: 10px;
-            text-align: center;
+            padding: 20px;
+            border-radius: 15px;
+            margin-bottom: 15px;
         }
         
-        .stat-box h2 {
-            font-size: 32px;
-            margin-bottom: 5px;
+        .recommendation-box h3 {
+            margin-bottom: 10px;
+            font-size: 16px;
         }
         
+        .recommendation-box p {
+            font-size: 14px;
+            line-height: 1.6;
+            opacity: 0.95;
+        }
+        
+        /* Loading */
         .loading {
             text-align: center;
-            padding: 20px;
+            padding: 40px;
             color: white;
+        }
+        
+        .spinner {
+            border: 3px solid rgba(255,255,255,0.3);
+            border-top: 3px solid white;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 15px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        /* Hidden file input */
+        .file-input-wrapper {
+            position: relative;
+            overflow: hidden;
+            display: inline-block;
+            width: 100%;
+        }
+        
+        .file-input-wrapper input[type=file] {
+            position: absolute;
+            left: -9999px;
+        }
+        
+        .file-input-label {
+            display: block;
+            padding: 40px;
+            border: 2px dashed #667eea;
+            border-radius: 12px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .file-input-label:hover {
+            background: #f0f4ff;
+        }
+        
+        /* Weight chart placeholder */
+        .chart-placeholder {
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+            color: #666;
+        }
+        
+        /* Hide sections initially */
+        .hidden {
+            display: none !important;
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <!-- Header -->
-        <div class="header">
-            <h1>🔥 Kaloriya Tracker</h1>
-            <p>Salomatlik yo'lidagi hamrohingiz</p>
+        <!-- Loading Screen -->
+        <div id="loadingScreen" class="loading">
+            <div class="spinner"></div>
+            <p>Yuklanmoqda...</p>
         </div>
         
-        <!-- Stats -->
-        <div class="card">
-            <div class="stats">
-                <div class="stat-box">
-                    <h2 id="totalPeople">0</h2>
-                    <p>Jami odamlar</p>
+        <!-- Registration Screen -->
+        <div id="registerScreen" class="section hidden">
+            <div class="header">
+                <h1 style="text-align: center; margin-bottom: 20px;">👋 Xush kelibsiz!</h1>
+                <p style="text-align: center; color: #666; margin-bottom: 20px;">Profilingizni yarating</p>
+                
+                <div class="form-group">
+                    <label>Ismingiz</label>
+                    <input type="text" id="regName" placeholder="Ismingizni kiriting">
                 </div>
-                <div class="stat-box">
-                    <h2 id="totalCalories">0</h2>
-                    <p>Kaloriya</p>
+                
+                <div class="form-group">
+                    <label>Vazningiz (kg)</label>
+                    <input type="number" id="regWeight" placeholder="70">
+                </div>
+                
+                <div class="form-group">
+                    <label>Bo'yingiz (cm)</label>
+                    <input type="number" id="regHeight" placeholder="175">
+                </div>
+                
+                <div class="form-group">
+                    <label>Yoshingiz</label>
+                    <input type="number" id="regAge" placeholder="25">
+                </div>
+                
+                <div class="form-group">
+                    <label>Jinsingiz</label>
+                    <select id="regGender">
+                        <option value="male">Erkak</option>
+                        <option value="female">Ayol</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label>Maqsadingiz</label>
+                    <select id="regGoal">
+                        <option value="lose">Vazn yo'qotish</option>
+                        <option value="maintain">Vaznni saqlash</option>
+                        <option value="gain">Vazn oshirish</option>
+                    </select>
+                </div>
+                
+                <button class="btn" onclick="registerUser()">Boshlash</button>
+            </div>
+        </div>
+        
+        <!-- Main App -->
+        <div id="mainApp" class="hidden">
+            <!-- Header with Profile -->
+            <div class="header">
+                <div class="profile-section">
+                    <img id="profilePic" src="" alt="Profile" class="profile-pic" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%2270%22 height=%2270%22%3E%3Crect width=%2270%22 height=%2270%22 fill=%22%23667eea%22/%3E%3Ctext x=%2235%22 y=%2240%22 text-anchor=%22middle%22 fill=%22white%22 font-size=%2228%22%3E👤%3C/text%3E%3C/svg%3E'">
+                    <div class="profile-info">
+                        <h1 id="userName">Foydalanuvchi</h1>
+                        <p id="userGoal">Maqsad: Vazn yo'qotish</p>
+                    </div>
+                </div>
+                
+                <div class="stats-grid">
+                    <div class="stat-card" id="calorieStat">
+                        <h2 id="todayCalories">0</h2>
+                        <p>Bugun yegan</p>
+                    </div>
+                    <div class="stat-card" id="normStat">
+                        <h2 id="dailyNorm">2000</h2>
+                        <p>Kunlik norma</p>
+                    </div>
+                </div>
+                
+                <div class="progress-container">
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="progressFill" style="width: 0%"></div>
+                    </div>
+                    <div class="progress-text">
+                        <span id="progressPercent">0%</span>
+                        <span id="remainingCalories">2000 qoldi</span>
+                    </div>
                 </div>
             </div>
-        </div>
-        
-        <!-- Add Person Form -->
-        <div class="card">
-            <h2 style="margin-bottom: 15px;">➕ Yangi qo'shish</h2>
-            <div class="form-group">
-                <label>Ism</label>
-                <input type="text" id="ism" placeholder="Ismingizni kiriting">
+            
+            <!-- Navigation Tabs -->
+            <div class="nav-tabs">
+                <button class="nav-tab active" onclick="switchTab('today')">📊 Bugun</button>
+                <button class="nav-tab" onclick="switchTab('log')">➕ Qo'shish</button>
+                <button class="nav-tab" onclick="switchTab('history')">📚 Tarix</button>
+                <button class="nav-tab" onclick="switchTab('weight')">⚖️ Vazn</button>
             </div>
-            <div class="form-group">
-                <label>Familya</label>
-                <input type="text" id="familya" placeholder="Familyangizni kiriting">
+            
+            <!-- Today Section -->
+            <div id="todaySection" class="section active">
+                <h2 class="section-title">🔥 Bugungi ovqatlar</h2>
+                <div id="todayFoodList">
+                    <p style="text-align: center; color: #999; padding: 20px;">Hozircha hech narsa qo'shilmagan</p>
+                </div>
+                
+                <div id="recommendationBox" class="recommendation-box" style="margin-top: 15px;">
+                    <h3>💡 Tavsiya</h3>
+                    <p id="recommendationText">Yuklanmoqda...</p>
+                </div>
             </div>
-            <div class="form-group">
-                <label>Vazn (kg)</label>
-                <input type="number" id="vazn" placeholder="70">
+            
+            <!-- Log Food Section -->
+            <div id="logSection" class="section">
+                <h2 class="section-title">🍽️ Ovqat qo'shish</h2>
+                
+                <div class="form-group">
+                    <label>Ovqat nomi</label>
+                    <input type="text" id="foodName" placeholder="Masalan: non 2 bo'lak, osh 1 porsiyasi">
+                </div>
+                
+                <div class="form-group">
+                    <label>Rasm (ixtiyoriy)</label>
+                    <div class="file-input-wrapper">
+                        <label for="foodPhoto" class="file-input-label">
+                            📷 Rasm yuklash
+                        </label>
+                        <input type="file" id="foodPhoto" accept="image/*" onchange="handlePhotoUpload(event)">
+                    </div>
+                    <img id="photoPreview" style="max-width: 100%; margin-top: 10px; border-radius: 10px; display: none;">
+                </div>
+                
+                <button class="btn" onclick="logFood()">Kaloriyani hisoblash</button>
+                
+                <div id="foodResult" style="margin-top: 20px; display: none;">
+                    <div class="food-card" style="background: white; border: 2px solid #667eea;">
+                        <div class="food-info">
+                            <h3 id="resultFoodName">-</h3>
+                            <p id="resultFoodDetails">-</p>
+                            <div class="food-calories" id="resultFoodCalories">0 kcal</div>
+                        </div>
+                    </div>
+                    <div class="food-actions">
+                        <button class="btn btn-success" onclick="approveFood()">✅ Tasdiqlash</button>
+                        <button class="btn btn-danger" onclick="rejectFood()">❌ Rad etish</button>
+                    </div>
+                </div>
             </div>
-            <div class="form-group">
-                <label>Maqsad</label>
-                <input type="text" id="maqsad" placeholder="Masalan: yog'yo'qotish">
+            
+            <!-- History Section -->
+            <div id="historySection" class="section">
+                <h2 class="section-title">📚 Ovqatlar tarixi</h2>
+                <div id="historyList">
+                    <p style="text-align: center; color: #999; padding: 20px;">Yuklanmoqda...</p>
+                </div>
             </div>
-            <button class="btn" onclick="addPerson()">Saqlash</button>
-        </div>
-        
-        <!-- Calorie Calculator -->
-        <div class="card">
-            <h2 style="margin-bottom: 15px;">🍔 Kaloriya hisoblash</h2>
-            <div class="form-group">
-                <input type="text" id="food" placeholder="Ovqat nomi (masalan: non 2 bo'lak)">
-            </div>
-            <button class="btn" onclick="calculateCalorie()">Hisoblash</button>
-            <div id="calorieResult" style="margin-top: 15px; font-weight: bold; color: #667eea;"></div>
-        </div>
-        
-        <!-- People List -->
-        <div class="card">
-            <h2 style="margin-bottom: 15px;">📋 Ro'yxat</h2>
-            <div id="peopleList">
-                <div class="loading">Yuklanmoqda...</div>
+            
+            <!-- Weight Section -->
+            <div id="weightSection" class="section">
+                <h2 class="section-title">⚖️ Vazn nazorati</h2>
+                
+                <div class="form-group">
+                    <label>Hozirgi vazningiz (kg)</label>
+                    <input type="number" id="currentWeight" placeholder="70.5" step="0.1">
+                </div>
+                
+                <button class="btn" onclick="logWeight()">Vaznni saqlash</button>
+                
+                <div id="weightChange" style="margin-top: 15px; padding: 15px; background: #f8f9fa; border-radius: 10px; display: none;">
+                    <p id="weightChangeText" style="font-weight: 600;"></p>
+                </div>
+                
+                <h3 style="margin: 20px 0 10px; font-size: 16px;">📈 Vazn tarixi</h3>
+                <div id="weightHistory" class="chart-placeholder">
+                    Yuklanmoqda...
+                </div>
             </div>
         </div>
     </div>
@@ -193,86 +554,368 @@
         const tg = window.Telegram.WebApp;
         tg.expand();
         
-        // Load people on startup
-        loadPeople();
+        const userId = tg.initDataUnsafe?.user?.id?.toString() || 'test_user';
+        const userName = tg.initDataUnsafe?.user?.first_name || '';
         
-        async function loadPeople() {
-            const response = await fetch('/api/people');
-            const people = await response.json();
+        let currentFoodLog = null;
+        let uploadedPhoto = null;
+        
+        // Initialize
+        window.onload = async function() {
+            await checkUser();
+        };
+        
+        async function checkUser() {
+            document.getElementById('loadingScreen').classList.remove('hidden');
+            document.getElementById('registerScreen').classList.add('hidden');
+            document.getElementById('mainApp').classList.add('hidden');
             
-            document.getElementById('totalPeople').textContent = people.length;
-            
-            const listDiv = document.getElementById('peopleList');
-            if (people.length === 0) {
-                listDiv.innerHTML = '<p style="text-align: center; color: #999;">Hozircha hech kim yo\'q</p>';
-                return;
+            try {
+                const response = await fetch(`/api/user/${userId}`);
+                const data = await response.json();
+                
+                if (data.exists) {
+                    // User exists - show main app
+                    loadUserData(data.user);
+                    await loadTodayFood();
+                    await loadRecommendations();
+                    document.getElementById('mainApp').classList.remove('hidden');
+                } else {
+                    // New user - show registration
+                    document.getElementById('regName').value = userName;
+                    document.getElementById('registerScreen').classList.remove('hidden');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                tg.showAlert('Xatolik yuz berdi. Qaytadan urinib ko\'ring.');
             }
             
-            let html = '';
-            people.forEach(person => {
-                html += `
-                    <div class="person-card">
-                        <h3>${person.ism} ${person.familya}</h3>
-                        <p>⚖️ ${person.vazn} kg</p>
-                        <p>🎯 ${person.maqsad}</p>
-                        <button class="delete-btn" onclick="deletePerson('${person.id}')">🗑️ O'chirish</button>
-                    </div>
-                `;
-            });
-            listDiv.innerHTML = html;
+            document.getElementById('loadingScreen').classList.add('hidden');
         }
         
-        async function addPerson() {
-            const ism = document.getElementById('ism').value;
-            const familya = document.getElementById('familya').value;
-            const vazn = document.getElementById('vazn').value;
-            const maqsad = document.getElementById('maqsad').value;
+        async function registerUser() {
+            const data = {
+                user_id: userId,
+                name: document.getElementById('regName').value,
+                weight: document.getElementById('regWeight').value,
+                height: document.getElementById('regHeight').value,
+                age: document.getElementById('regAge').value,
+                gender: document.getElementById('regGender').value,
+                goal: document.getElementById('regGoal').value
+            };
             
-            if (!ism || !familya || !vazn) {
+            if (!data.name || !data.weight || !data.height || !data.age) {
                 tg.showAlert('Iltimos, barcha maydonlarni to\'ldiring!');
                 return;
             }
             
-            const response = await fetch('/api/add', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({ism, familya, vazn, maqsad})
-            });
-            
-            const result = await response.json();
-            if (result.success) {
-                tg.showAlert('Muvaffaqiyatli qo\'shildi!');
-                document.getElementById('ism').value = '';
-                document.getElementById('familya').value = '';
-                document.getElementById('vazn').value = '';
-                document.getElementById('maqsad').value = '';
-                loadPeople();
+            try {
+                const response = await fetch('/api/user', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify(data)
+                });
+                
+                const result = await response.json();
+                if (result.success) {
+                    tg.showAlert('Profilingiz yaratildi!');
+                    await checkUser();
+                } else {
+                    tg.showAlert('Xatolik: ' + result.error);
+                }
+            } catch (error) {
+                tg.showAlert('Xatolik yuz berdi.');
             }
         }
         
-        async function deletePerson(id) {
-            await fetch(`/api/delete/${id}`, {method: 'DELETE'});
-            loadPeople();
+        function loadUserData(user) {
+            document.getElementById('userName').textContent = user.name || 'Foydalanuvchi';
+            document.getElementById('userGoal').textContent = `Maqsad: ${getGoalText(user.goal)}`;
+            document.getElementById('dailyNorm').textContent = user.daily_calorie_norm;
+            document.getElementById('profilePic').src = user.profile_pic || '';
         }
         
-        async function calculateCalorie() {
-            const food = document.getElementById('food').value;
-            if (!food) {
+        function getGoalText(goal) {
+            const goals = {
+                'lose': 'Vazn yo\'qotish',
+                'maintain': 'Vaznni saqlash',
+                'gain': 'Vazn oshirish'
+            };
+            return goals[goal] || goal;
+        }
+        
+        async function loadTodayFood() {
+            try {
+                const response = await fetch(`/api/food/today/${userId}`);
+                const data = await response.json();
+                
+                document.getElementById('todayCalories').textContent = data.total_calories;
+                
+                const norm = parseInt(document.getElementById('dailyNorm').textContent);
+                const percent = Math.min((data.total_calories / norm) * 100, 100);
+                
+                document.getElementById('progressFill').style.width = percent + '%';
+                document.getElementById('progressPercent').textContent = Math.round(percent) + '%';
+                document.getElementById('remainingCalories').textContent = (norm - data.total_calories) + ' qoldi';
+                
+                // Update stat cards colors
+                const calorieStat = document.getElementById('calorieStat');
+                const normStat = document.getElementById('normStat');
+                
+                if (data.total_calories > norm) {
+                    calorieStat.className = 'stat-card warning';
+                } else if (data.total_calories > norm * 0.8) {
+                    calorieStat.className = 'stat-card success';
+                } else {
+                    calorieStat.className = 'stat-card';
+                }
+                
+                // Render food list
+                const listDiv = document.getElementById('todayFoodList');
+                if (data.food.length === 0) {
+                    listDiv.innerHTML = '<p style="text-align: center; color: #999; padding: 20px;">Hozircha hech narsa qo\'shilmagan</p>';
+                } else {
+                    let html = '';
+                    data.food.forEach(food => {
+                        html += `
+                            <div class="food-card">
+                                ${food.photo ? `<img src="${food.photo}" class="food-photo">` : '<div style="width: 60px; height: 60px; background: #667eea; border-radius: 10px; display: flex; align-items: center; justify-content: center; color: white; font-size: 24px;">🍽️</div>'}
+                                <div class="food-info">
+                                    <h3>${food.food_name}</h3>
+                                    <p>${food.details}</p>
+                                    <div class="food-calories">${food.calories} kcal</div>
+                                </div>
+                            </div>
+                        `;
+                    });
+                    listDiv.innerHTML = html;
+                }
+            } catch (error) {
+                console.error('Error loading today food:', error);
+            }
+        }
+        
+        async function loadRecommendations() {
+            try {
+                const response = await fetch(`/api/recommendations/${userId}`);
+                const data = await response.json();
+                
+                if (data.success) {
+                    document.getElementById('recommendationText').textContent = data.recommendation;
+                }
+            } catch (error) {
+                console.error('Error loading recommendations:', error);
+            }
+        }
+        
+        function switchTab(tab) {
+            // Update tabs
+            document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+            event.target.classList.add('active');
+            
+            // Update sections
+            document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+            
+            if (tab === 'today') {
+                document.getElementById('todaySection').classList.add('active');
+                loadTodayFood();
+                loadRecommendations();
+            } else if (tab === 'log') {
+                document.getElementById('logSection').classList.add('active');
+            } else if (tab === 'history') {
+                document.getElementById('historySection').classList.add('active');
+                loadHistory();
+            } else if (tab === 'weight') {
+                document.getElementById('weightSection').classList.add('active');
+                loadWeightHistory();
+            }
+        }
+        
+        function handlePhotoUpload(event) {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    uploadedPhoto = e.target.result;
+                    document.getElementById('photoPreview').src = uploadedPhoto;
+                    document.getElementById('photoPreview').style.display = 'block';
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+        
+        async function logFood() {
+            const foodName = document.getElementById('foodName').value;
+            if (!foodName) {
                 tg.showAlert('Ovqat nomini kiriting!');
                 return;
             }
             
-            const response = await fetch('/api/calorie', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({food})
-            });
+            try {
+                const response = await fetch('/api/food/log', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        user_id: userId,
+                        food_name: foodName,
+                        photo: uploadedPhoto
+                    })
+                });
+                
+                const result = await response.json();
+                if (result.success) {
+                    currentFoodLog = result;
+                    document.getElementById('resultFoodName').textContent = foodName;
+                    document.getElementById('resultFoodDetails').textContent = result.details;
+                    document.getElementById('resultFoodCalories').textContent = result.calories + ' kcal';
+                    document.getElementById('foodResult').style.display = 'block';
+                } else {
+                    tg.showAlert('Xatolik: ' + result.error);
+                }
+            } catch (error) {
+                tg.showAlert('Xatolik yuz berdi.');
+            }
+        }
+        
+        async function approveFood() {
+            if (!currentFoodLog) return;
             
-            const result = await response.json();
-            if (result.success) {
-                document.getElementById('calorieResult').textContent = `🔥 ${result.calorie}`;
-            } else {
-                tg.showAlert('Xatolik: ' + result.error);
+            try {
+                const response = await fetch(`/api/food/approve/${currentFoodLog.log_id}`, {
+                    method: 'POST'
+                });
+                
+                const result = await response.json();
+                if (result.success) {
+                    tg.showAlert('Tasdiqlandi!');
+                    document.getElementById('foodResult').style.display = 'none';
+                    document.getElementById('foodName').value = '';
+                    uploadedPhoto = null;
+                    document.getElementById('photoPreview').style.display = 'none';
+                    await loadTodayFood();
+                }
+            } catch (error) {
+                tg.showAlert('Xatolik yuz berdi.');
+            }
+        }
+        
+        async function rejectFood() {
+            if (!currentFoodLog) return;
+            
+            try {
+                const response = await fetch(`/api/food/reject/${currentFoodLog.log_id}`, {
+                    method: 'POST'
+                });
+                
+                const result = await response.json();
+                if (result.success) {
+                    tg.showAlert('Rad etildi');
+                    document.getElementById('foodResult').style.display = 'none';
+                }
+            } catch (error) {
+                tg.showAlert('Xatolik yuz berdi.');
+            }
+        }
+        
+        async function loadHistory() {
+            try {
+                const response = await fetch(`/api/food/history/${userId}`);
+                const foodList = await response.json();
+                
+                const listDiv = document.getElementById('historyList');
+                if (foodList.length === 0) {
+                    listDiv.innerHTML = '<p style="text-align: center; color: #999; padding: 20px;">Hozircha tarix yo\'q</p>';
+                    return;
+                }
+                
+                let html = '';
+                foodList.forEach(food => {
+                    const date = new Date(food.timestamp).toLocaleDateString('uz-UZ');
+                    const statusEmoji = food.status === 'approved' ? '✅' : food.status === 'rejected' ? '❌' : '⏳';
+                    
+                    html += `
+                        <div class="food-card">
+                            <div class="food-info">
+                                <h3>${food.food_name} ${statusEmoji}</h3>
+                                <p>${date} - ${food.details}</p>
+                                <div class="food-calories">${food.calories} kcal</div>
+                            </div>
+                        </div>
+                    `;
+                });
+                listDiv.innerHTML = html;
+            } catch (error) {
+                console.error('Error loading history:', error);
+            }
+        }
+        
+        async function logWeight() {
+            const weight = document.getElementById('currentWeight').value;
+            if (!weight) {
+                tg.showAlert('Vaznni kiriting!');
+                return;
+            }
+            
+            try {
+                const response = await fetch('/api/weight/log', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        user_id: userId,
+                        weight: weight
+                    })
+                });
+                
+                const result = await response.json();
+                if (result.success) {
+                    if (result.change !== null) {
+                        const changeDiv = document.getElementById('weightChange');
+                        const changeText = document.getElementById('weightChangeText');
+                        
+                        if (result.change > 0) {
+                            changeText.textContent = `⬆️ ${result.change.toFixed(1)} kg ko'paydi`;
+                            changeText.style.color = '#f5576c';
+                        } else if (result.change < 0) {
+                            changeText.textContent = `⬇️ ${Math.abs(result.change).toFixed(1)} kg kamaydi`;
+                            changeText.style.color = '#38ef7d';
+                        } else {
+                            changeText.textContent = `➡️ O'zgarmadi`;
+                            changeText.style.color = '#667eea';
+                        }
+                        
+                        changeDiv.style.display = 'block';
+                    }
+                    
+                    tg.showAlert('Vazn saqlandi!');
+                    await loadWeightHistory();
+                }
+            } catch (error) {
+                tg.showAlert('Xatolik yuz berdi.');
+            }
+        }
+        
+        async function loadWeightHistory() {
+            try {
+                const response = await fetch(`/api/weight/history/${userId}`);
+                const weights = await response.json();
+                
+                const historyDiv = document.getElementById('weightHistory');
+                if (weights.length === 0) {
+                    historyDiv.innerHTML = '<p>Hozircha vazn o\'lchovlari yo\'q</p>';
+                    return;
+                }
+                
+                let html = '<div style="text-align: left;">';
+                weights.slice(0, 10).forEach((w, index) => {
+                    const date = new Date(w.timestamp).toLocaleDateString('uz-UZ');
+                    const change = index > 0 ? `(${(parseFloat(w.weight) - parseFloat(weights[index-1].weight)).toFixed(1)} kg)` : '';
+                    html += `<div style="padding: 8px 0; border-bottom: 1px solid #e0e0e0;">${date}: <strong>${w.weight} kg</strong> ${change}</div>`;
+                });
+                html += '</div>';
+                
+                historyDiv.innerHTML = html;
+            } catch (error) {
+                console.error('Error loading weight history:', error);
             }
         }
     </script>
