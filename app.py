@@ -388,6 +388,6 @@ def get_recommendations(user_id):
 
 if __name__ == '__main__':
     init_files()
-    port = int(os.environ.get('PORT', 5000))
+    port = int(os.environ.get('PORT', 5050))
     print(f"🚀 Server ishga tushmoqda: http://0.0.0.0:{port}")
     app.run(host='0.0.0.0', port=port, debug=True)
