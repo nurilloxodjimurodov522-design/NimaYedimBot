@@ -1,4 +1,226 @@
+# ======================
+# ENVIRONMENT VARIABLES
+# ======================
 .env
+.env.local
+.env.production
+*.env
+
+# ======================
+# DATA FILES
+# ======================
+data/
 data.csv
+*.csv
+*.db
+*.sqlite
+*.sqlite3
+
+# ======================
+# UPLOADED FILES
+# ======================
+static/uploads/
+uploads/
+media/
+
+# ======================
+# PYTHON
+# ======================
+# Byte-compiled / optimized / DLL files
 __pycache__/
-*.pyc
+*.py[cod]
+*$py.class
+
+# C extensions
+*.so
+
+# Distribution / packaging
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+pip-wheel-metadata/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# PyInstaller
+*.manifest
+*.spec
+
+# Installer logs
+pip-log.txt
+pip-delete-this-directory.txt
+
+# ======================
+# VIRTUAL ENVIRONMENT
+# ======================
+# Virtual environments
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+.venv
+
+# Virtual environments (Windows)
+env/
+Env/
+ENV/
+
+# ======================
+# IDE FILES
+# ======================
+# PyCharm
+.idea/
+*.iml
+*.iws
+*.ipr
+out/
+
+# VS Code
+.vscode/
+*.code-workspace
+
+# JetBrains IDEs
+.idea/
+*.iml
+.idea/modules.xml
+.idea/workspace.xml
+.idea/tasks.xml
+.idea/encodings.xml
+.idea/misc.xml
+.idea/vcs.xml
+.idea/libraries/
+
+# Eclipse
+.pydevproject
+.settings/
+.project
+
+# Sublime Text
+*.sublime-project
+*.sublime-workspace
+
+# ======================
+# UNIT TEST COVERAGE
+# ======================
+.coverage
+htmlcov/
+.tox/
+.nox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.py,cover
+.hypothesis/
+.pytest_cache/
+
+# ======================
+# LOGS
+# ======================
+*.log
+logs/
+*.log.*
+
+# ======================
+# OS FILES
+# ======================
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# Linux
+*~
+.fuse_hidden*
+.Trash-*
+.nfs*
+
+# ======================
+# TEMPORARY FILES
+# ======================
+*.tmp
+*.temp
+*.swp
+*.swo
+*~
+*.bak
+*.old
+*.orig
+
+# ======================
+# SENSITIVE FILES
+# ======================
+# Private keys
+*.pem
+*.key
+*.p12
+*.pfx
+
+# Certificates
+*.crt
+*.cer
+
+# ======================
+# NODE MODULES (if using)
+# ======================
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# ======================
+# OTHER
+# ======================
+# Documentation
+docs/_build/
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# pyenv
+.python-version
+
+# Celery
+celerybeat-schedule
+celerybeat.pid
+
+# SageMath
+*.sage.py
+
+# Spyder
+.spyderproject
+.spyproject
+
+# Rope
+.ropeproject
+
+# mkdocs
+site/
+
+# mypy
+.mypy_cache/
+.dmypy.json
+dmypy.json
