@@ -387,7 +387,8 @@ def get_recommendations(user_id):
         return jsonify({'success': False, 'error': str(e)})
 
 if __name__ == '__main__':
-    init_csv()
+    init_files()  # ✅ Tuzatildi: init_csv() emas, init_files()
+    
     # Railway bergan portni olish, agar bo'lmasa 5000 dan foydalanish
     port = int(os.environ.get('PORT', 5000))
     
