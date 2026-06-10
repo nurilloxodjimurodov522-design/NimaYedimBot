@@ -389,7 +389,7 @@ def get_recommendations(user_id):
 if __name__ == '__main__':
     init_csv()
     # Railway bergan portni olish, agar bo'lmasa 5000 dan foydalanish
-    port = int(os.environ.get('PORT', 8080))
+    port = int(os.environ.get('PORT', 5000))
     
     print(f"🚀 Server ishga tushmoqda: http://0.0.0.0:{port}")
     
