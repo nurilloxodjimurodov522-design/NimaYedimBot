@@ -11,7 +11,7 @@ import uuid
 import logging
 import threading
 from datetime import datetime, timedelta
-from flask import Flask, render_template, request, jsonify, session
+from flask import Flask, render_template, request, jsonify
 from dotenv import load_dotenv
 import google.generativeai as genai
 
@@ -51,8 +51,9 @@ WATER_LOG_FILE = f'{DATA_DIR}/water_log.csv'
 WORKOUT_FILE = f'{DATA_DIR}/workouts.csv'
 BLOCKED_USERS_FILE = f'{DATA_DIR}/blocked_users.txt'
 
-# Admin users
+# Admin users (vergul bilan ajratilgan user ID lar)
 ADMIN_USERS = os.getenv('ADMIN_USERS', '').split(',')
+ADMIN_USERS = [u.strip() for u in ADMIN_USERS if u.strip()]
 
 # ================= CSV FUNKSIYALARI =================
 
@@ -71,6 +72,11 @@ def init_files():
             with open(filepath, 'w', newline='', encoding='utf-8') as f:
                 writer = csv.DictWriter(f, fieldnames=fieldnames)
                 writer.writeheader()
+    
+    # Blocked users faylini yaratish
+    if not os.path.exists(BLOCKED_USERS_FILE):
+        with open(BLOCKED_USERS_FILE, 'w') as f:
+            pass
     
     logger.info("✅ All CSV files initialized")
 
@@ -110,7 +116,11 @@ def is_user_blocked(user_id):
     if not os.path.exists(BLOCKED_USERS_FILE):
         return False
     with open(BLOCKED_USERS_FILE, 'r') as f:
-        return user_id in f.read().splitlines()
+        blocked = f.read().splitlines()
+        return user_id in blocked
+
+def is_admin(user_id):
+    return user_id in ADMIN_USERS
 
 # ================= WEB ROUTES =================
 
@@ -241,13 +251,6 @@ def get_today_food(user_id):
     total = sum(int(f['calories']) for f in today_food)
     return jsonify({'food': today_food, 'total_calories': total})
 
-@app.route('/api/food/history/<user_id>', methods=['GET'])
-def get_food_history(user_id):
-    food_log = read_csv(FOOD_LOG_FILE)
-    history = [f for f in food_log if f['user_id'] == user_id]
-    history.sort(key=lambda x: x['timestamp'], reverse=True)
-    return jsonify(history)
-
 @app.route('/api/weight/log', methods=['POST'])
 def log_weight():
     data = request.json
@@ -321,13 +324,6 @@ def log_workout():
         return jsonify({'success': True, 'calories_burned': calories_burned})
     return jsonify({'success': False}), 500
 
-@app.route('/api/workout/history/<user_id>', methods=['GET'])
-def get_workout_history(user_id):
-    workout_log = read_csv(WORKOUT_FILE)
-    history = [w for w in workout_log if w['user_id'] == user_id]
-    history.sort(key=lambda x: x['timestamp'], reverse=True)
-    return jsonify(history)
-
 @app.route('/api/recommendations/<user_id>', methods=['GET'])
 def get_recommendations(user_id):
     users = read_csv(USERS_FILE)
@@ -353,7 +349,11 @@ def get_recommendations(user_id):
             weight_trend = "vazn oshmoqda"
     
     lang = user.get('language', 'uz')
-    lang_name = "o'zbek" if lang == 'uz' else "rus"
+    # TO'G'RILANDI: Backslash o'rniga o'zgaruvchi ishlatildi
+    if lang == 'uz':
+        lang_name = "o'zbek"
+    else:
+        lang_name = "rus"
     
     prompt = f"""
     Foydalanuvchi: {user.get('name', 'User')}, vazn: {user['weight']}kg, maqsad: {user['goal']}.
@@ -487,7 +487,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = str(update.effective_user.id)
     
     if is_user_blocked(user_id):
-        await update.message.reply_text("Siz bloklangan foydalanuvchisiz.")
+        await update.message.reply_text("❌ Siz bloklangan foydalanuvchisiz.")
         return
     
     keyboard = [[InlineKeyboardButton("📱 Ilovani Ochish", web_app={"url": WEB_APP_URL})]]
@@ -506,11 +506,169 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(text, parse_mode='Markdown', reply_markup=InlineKeyboardMarkup(keyboard))
 
 async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text(
-        "/start - Boshlash\n"
-        "/help - Yordam\n"
-        "/settings - Sozlamalar"
-    )
+    user_id = str(update.effective_user.id)
+    
+    if is_admin(user_id):
+        text = """
+📱 *Foydalanuvchi buyruqlar:*
+/start - Boshlash
+/help - Yordam
+
+👨‍💼 *Admin buyruqlar:*
+/admin - Admin panel
+/users - Foydalanuvchilar ro'yxati
+/block <id> - Bloklash
+/unblock <id> - Blokdan chiqarish
+/broadcast <xabar> - Hammaga yuborish
+        """
+    else:
+        text = """
+📱 *Buyruqlar:*
+/start - Boshlash
+/help - Yordam
+        """
+    
+    await update.message.reply_text(text, parse_mode='Markdown')
+
+# ================= ADMIN TELEGRAM COMMANDS =================
+
+async def admin_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Admin panel - faqat admin uchun"""
+    user_id = str(update.effective_user.id)
+    
+    if not is_admin(user_id):
+        await update.message.reply_text("❌ Siz admin emassiz!")
+        return
+    
+    users = read_csv(USERS_FILE)
+    food_log = read_csv(FOOD_LOG_FILE)
+    today = datetime.now().strftime('%Y-%m-%d')
+    active_today = len(set([f['user_id'] for f in food_log if f['timestamp'].startswith(today)]))
+    
+    text = f"""
+👨‍💼 *Admin Panel*
+
+📊 *Statistika:*
+• Jami foydalanuvchilar: {len(users)}
+• Bugun faol: {active_today}
+• Jami ovqatlar: {len(food_log)}
+
+🔗 *Web Admin Panel:*
+{WEB_APP_URL}/admin
+
+📋 *Buyruqlar:*
+/users - Barcha foydalanuvchilar
+/broadcast <xabar> - Hammaga yuborish
+/block <user_id> - Bloklash
+/unblock <user_id> - Blokdan chiqarish
+    """
+    
+    keyboard = [[InlineKeyboardButton("📊 Admin Panel", url=f"{WEB_APP_URL}/admin")]]
+    await update.message.reply_text(text, parse_mode='Markdown', reply_markup=InlineKeyboardMarkup(keyboard))
+
+async def users_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Barcha foydalanuvchilar ro'yxati"""
+    user_id = str(update.effective_user.id)
+    
+    if not is_admin(user_id):
+        await update.message.reply_text("❌ Siz admin emassiz!")
+        return
+    
+    users = read_csv(USERS_FILE)
+    
+    if not users:
+        await update.message.reply_text("ℹ️ Hali foydalanuvchilar yo'q")
+        return
+    
+    text = "👥 *Foydalanuvchilar:*\n\n"
+    for i, user in enumerate(users[:20], 1):
+        name = user.get('name', 'Noma\'lum')
+        uid = user['user_id']
+        weight = user['weight']
+        goal = user['goal']
+        text += f"{i}. {name} ({uid})\n"
+        text += f"   Vazn: {weight}kg | Maqsad: {goal}\n\n"
+    
+    if len(users) > 20:
+        text += f"\n...va yana {len(users) - 20} ta"
+    
+    await update.message.reply_text(text, parse_mode='Markdown')
+
+async def block_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Foydalanuvchini bloklash"""
+    user_id = str(update.effective_user.id)
+    
+    if not is_admin(user_id):
+        await update.message.reply_text("❌ Siz admin emassiz!")
+        return
+    
+    if not context.args:
+        await update.message.reply_text("❌ Foydalanuvchi ID sini kiriting!\nMasalan: /block 123456789")
+        return
+    
+    target_user = context.args[0]
+    
+    with open(BLOCKED_USERS_FILE, 'a') as f:
+        f.write(f"{target_user}\n")
+    
+    await update.message.reply_text(f"✅ Foydalanuvchi {target_user} bloklandi!")
+
+async def unblock_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Foydalanuvchini blokdan chiqarish"""
+    user_id = str(update.effective_user.id)
+    
+    if not is_admin(user_id):
+        await update.message.reply_text("❌ Siz admin emassiz!")
+        return
+    
+    if not context.args:
+        await update.message.reply_text("❌ Foydalanuvchi ID sini kiriting!")
+        return
+    
+    target_user = context.args[0]
+    
+    if os.path.exists(BLOCKED_USERS_FILE):
+        with open(BLOCKED_USERS_FILE, 'r') as f:
+            blocked = f.read().splitlines()
+        
+        blocked = [u for u in blocked if u != target_user]
+        
+        with open(BLOCKED_USERS_FILE, 'w') as f:
+            f.write('\n'.join(blocked))
+    
+    await update.message.reply_text(f"✅ Foydalanuvchi {target_user} blokdan chiqarildi!")
+
+async def broadcast_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Barcha foydalanuvchilarga xabar yuborish"""
+    user_id = str(update.effective_user.id)
+    
+    if not is_admin(user_id):
+        await update.message.reply_text("❌ Siz admin emassiz!")
+        return
+    
+    if not context.args:
+        await update.message.reply_text("❌ Xabar matnini kiriting!\nMasalan: /broadcast Yangi funksiyalar qo'shildi!")
+        return
+    
+    message = ' '.join(context.args)
+    users = read_csv(USERS_FILE)
+    
+    sent_count = 0
+    failed_count = 0
+    
+    for user in users:
+        try:
+            await context.bot.send_message(
+                chat_id=user['user_id'],
+                text=f"📢 *Admin xabari:*\n\n{message}",
+                parse_mode='Markdown'
+            )
+            sent_count += 1
+        except Exception as e:
+            logger.error(f"Failed to send to {user['user_id']}: {e}")
+            failed_count += 1
+    
+    await update.message.reply_text(f"✅ {sent_count}/{len(users)} foydalanuvchiga yuborildi!\n❌ Muvaffaqiyatsiz: {failed_count}")
 
 # ================= MAIN =================
 
@@ -536,10 +694,20 @@ if __name__ == '__main__':
     
     try:
         application = Application.builder().token(TELEGRAM_BOT_TOKEN).build()
+        
+        # User commands
         application.add_handler(CommandHandler("start", start))
         application.add_handler(CommandHandler("help", help_command))
         
+        # Admin commands
+        application.add_handler(CommandHandler("admin", admin_command))
+        application.add_handler(CommandHandler("users", users_command))
+        application.add_handler(CommandHandler("block", block_command))
+        application.add_handler(CommandHandler("unblock", unblock_command))
+        application.add_handler(CommandHandler("broadcast", broadcast_command))
+        
         logger.info("🤖 Bot running...")
+        logger.info(f"👨‍💼 Admin users: {ADMIN_USERS}")
         application.run_polling(drop_pending_updates=True)
     except Exception as e:
         logger.error(f"Bot error: {e}")
