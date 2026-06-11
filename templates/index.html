@@ -181,10 +181,9 @@
             margin-top: 16px;
         }
         
-        .hidden { display: none; }
+        .hidden { display: none !important; }
         .loading { text-align: center; padding: 40px; color: white; }
         
-        /* Chiroyli til tanlash */
         .language-selector {
             position: fixed;
             top: 20px;
@@ -271,12 +270,11 @@
             font-weight: 500;
         }
         
-        /* Bugungi ovqatlar ro'yxati */
-        .food-list {
+        .food-list, .workout-list {
             margin-top: 12px;
         }
         
-        .food-item {
+        .food-item, .workout-item {
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -286,12 +284,17 @@
             margin-bottom: 8px;
         }
         
-        .food-name {
+        .food-name, .workout-name {
             font-weight: 500;
         }
         
         .food-calories {
             color: var(--primary);
+            font-weight: 600;
+        }
+        
+        .workout-calories {
+            color: var(--danger);
             font-weight: 600;
         }
         
@@ -303,6 +306,57 @@
             border-radius: 4px;
             cursor: pointer;
             margin-left: 8px;
+        }
+        
+        /* Modal */
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 10000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        
+        .modal-content {
+            background: var(--card-bg);
+            border-radius: 16px;
+            padding: 24px;
+            max-width: 480px;
+            width: 100%;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+        
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 28px;
+            cursor: pointer;
+            color: var(--text-dark);
+            width: 36px;
+            height: 36px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            transition: background 0.3s;
+        }
+        
+        .modal-close:hover {
+            background: var(--bg-light);
         }
         
         /* AI Chat */
@@ -382,69 +436,6 @@
             padding: 12px 24px;
             border-radius: 25px;
             cursor: pointer;
-            font-weight: 600;
-        }
-        
-        /* Modal */
-        .modal {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(0,0,0,0.5);
-            z-index: 10000;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 20px;
-        }
-        
-        .modal-content {
-            background: var(--card-bg);
-            border-radius: 16px;
-            padding: 24px;
-            max-width: 480px;
-            width: 100%;
-            max-height: 90vh;
-            overflow-y: auto;
-        }
-        
-        .modal-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
-        }
-        
-        .modal-close {
-            background: none;
-            border: none;
-            font-size: 24px;
-            cursor: pointer;
-        }
-        
-        /* Workout log */
-        .workout-list {
-            margin-top: 12px;
-        }
-        
-        .workout-item {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 12px;
-            background: var(--bg-light);
-            border-radius: 8px;
-            margin-bottom: 8px;
-        }
-        
-        .workout-name {
-            font-weight: 500;
-        }
-        
-        .workout-calories {
-            color: var(--danger);
             font-weight: 600;
         }
     </style>
@@ -641,6 +632,7 @@
         tg.expand();
         tg.ready();
         
+        // Telegram user ID yoki localStorage dan olish
         let userId = tg.initDataUnsafe.user?.id?.toString();
         
         if (!userId) {
@@ -648,8 +640,12 @@
             if (!userId) {
                 userId = 'user_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
                 localStorage.setItem('nimayedim_user_id', userId);
+                console.log('Yangi user yaratildi:', userId);
+            } else {
+                console.log('LocalStorage dan user topildi:', userId);
             }
         } else {
+            console.log('Telegram user:', userId);
             localStorage.setItem('nimayedim_user_id', userId);
         }
         
@@ -705,6 +701,7 @@
                 document.getElementById('loading').classList.add('hidden');
                 
                 if (data.exists) {
+                    // Foydalanuvchi mavjud - dashboardni ko'rsatish
                     currentLang = data.user.language || 'uz';
                     currentUser = data.user;
                     dailyNorm = parseInt(data.user.daily_calorie_norm);
@@ -712,6 +709,7 @@
                     await loadTodayData();
                     showDashboard(data.user, data.today_calories, data.today_water);
                 } else {
+                    // Yangi foydalanuvchi - avtomatik ro'yxatdan o'tkazish
                     await autoRegisterUser();
                 }
             } catch (error) {
@@ -720,15 +718,16 @@
         }
         
         async function autoRegisterUser() {
+            // Telegram dan ma'lumot olish
             const tgUser = tg.initDataUnsafe.user;
             const userData = {
                 user_id: userId,
                 name: tgUser?.first_name || 'Foydalanuvchi',
-                weight: 70,
-                height: 170,
-                age: 25,
-                gender: 'male',
-                goal: 'maintain',
+                weight: 70,  // Default
+                height: 170, // Default
+                age: 25,     // Default
+                gender: tgUser?.gender === 'male' ? 'male' : 'female', // Default
+                goal: 'maintain', // Default
                 language: currentLang
             };
             
@@ -744,8 +743,10 @@
                     dailyNorm = data.daily_norm;
                     currentUser = userData;
                     showDashboard(userData, 0, 0);
+                    
+                    // Faqat birinchi marta xabar ko'rsatish
                     setTimeout(function() {
-                        tg.showAlert('Xush kelibsiz! Profilingiz yaratildi.');
+                        tg.showAlert('Xush kelibsiz! Profilingiz avtomatik yaratildi. Sozlamalardan o\'zgartirishingiz mumkin.');
                     }, 500);
                 }
             } catch (error) {
@@ -969,6 +970,54 @@
             }
         }
         
+        async function deleteFood(logId) {
+            if (confirm('Bu ovqatni o\'chirmoqchimisiz?')) {
+                try {
+                    await fetch('/api/food/' + logId, {
+                        method: 'DELETE'
+                    });
+                    
+                    todayFood = todayFood.filter(function(f) {
+                        return f.log_id !== logId;
+                    });
+                    renderTodayFood();
+                    
+                    const foodResponse = await fetch('/api/food/today/' + userId);
+                    const foodData = await foodResponse.json();
+                    const totalCal = foodData.total_calories || 0;
+                    updateDailyStats(totalCal);
+                    
+                    showNotification("Ovqat o'chirildi");
+                } catch (error) {
+                    tg.showAlert('Xatolik');
+                }
+            }
+        }
+        
+        async function deleteWorkout(logId) {
+            if (confirm('Bu mashg\'ulotni o\'chirmoqchimisiz?')) {
+                try {
+                    await fetch('/api/workout/' + logId, {
+                        method: 'DELETE'
+                    });
+                    
+                    todayWorkouts = todayWorkouts.filter(function(w) {
+                        return w.log_id !== logId;
+                    });
+                    renderTodayWorkouts();
+                    
+                    const foodResponse = await fetch('/api/food/today/' + userId);
+                    const foodData = await foodResponse.json();
+                    const totalCal = foodData.total_calories || 0;
+                    updateDailyStats(totalCal);
+                    
+                    showNotification("Mashg'ulot o'chirildi");
+                } catch (error) {
+                    tg.showAlert('Xatolik');
+                }
+            }
+        }
+        
         function openAIChat() {
             document.getElementById('aiChatModal').classList.remove('hidden');
         }
@@ -1013,11 +1062,13 @@
         }
         
         function showProfileSettings() {
-            document.getElementById('editName').value = currentUser.name || '';
-            document.getElementById('editWeight').value = currentUser.weight || '';
-            document.getElementById('editHeight').value = currentUser.height || '';
-            document.getElementById('editAge').value = currentUser.age || '';
-            document.getElementById('editGoal').value = currentUser.goal || 'maintain';
+            if (currentUser) {
+                document.getElementById('editName').value = currentUser.name || '';
+                document.getElementById('editWeight').value = currentUser.weight || '';
+                document.getElementById('editHeight').value = currentUser.height || '';
+                document.getElementById('editAge').value = currentUser.age || '';
+                document.getElementById('editGoal').value = currentUser.goal || 'maintain';
+            }
             document.getElementById('profileModal').classList.remove('hidden');
         }
         
@@ -1043,9 +1094,9 @@
                 
                 const data = await response.json();
                 if (data.success) {
-                    tg.showAlert("Profil saqlandi!");
                     closeProfileSettings();
                     await checkUser();
+                    tg.showAlert("✅ Profil saqlandi!");
                 }
             } catch (error) {
                 tg.showAlert('Xatolik');
@@ -1123,6 +1174,14 @@
             div.textContent = message;
             document.body.appendChild(div);
             setTimeout(function() { div.remove(); }, 3000);
+        }
+        
+        // Modal tashqarisiga bosganda yopish
+        window.onclick = function(event) {
+            const modal = document.getElementById('profileModal');
+            if (event.target === modal) {
+                closeProfileSettings();
+            }
         }
     </script>
 </body>
