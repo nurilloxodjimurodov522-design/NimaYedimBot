@@ -130,8 +130,10 @@ def calculate_daily_norm(weight, height, age, gender, goal):
         return 2000
 
 def is_user_blocked(user_id):
-    user = User.query.get(user_id)
-    return user.is_blocked if user else False
+    """Foydalanuvchi bloklanganmi tekshirish"""
+    with app.app_context():
+        user = User.query.get(user_id)
+        return user.is_blocked if user else False
 
 def is_admin(user_id):
     return user_id in ADMIN_USERS
@@ -585,16 +587,18 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     
     logger.info(f"User {user_id} started the bot")
     
-    if is_user_blocked(user_id):
-        await update.message.reply_text("❌ Siz bloklangan foydalanuvchisiz.")
-        return
+    # Flask application context ichida ishlash
+    with app.app_context():
+        if is_user_blocked(user_id):
+            await update.message.reply_text("❌ Siz bloklangan foydalanuvchisiz.")
+            return
+        
+        user = User.query.get(user_id)
+        lang = user.language if user else 'uz'
     
     # Chiroyli inline keyboard
     keyboard = [[InlineKeyboardButton("📱 Ilovani Ochish", web_app={"url": WEB_APP_URL})]]
     reply_markup = InlineKeyboardMarkup(keyboard)
-    
-    user = User.query.get(user_id)
-    lang = user.language if user else 'uz'
     
     if lang == 'ru':
         text = f"""
@@ -614,7 +618,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         """
     else:
         text = f"""
-👋 *Xush kelibsiz, {user_name}!*
+ *Xush kelibsiz, {user_name}!*
 
 🔥 *Kaloriya Tracker Pro*
 ✨ Powered by Gemini 2.0 AI
@@ -622,12 +626,12 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 📊 *Imkoniyatlar:*
 • 🍔 AI bilan kaloriya hisoblash
 • 💧 Suv ichish trackeri
-• 🏃 Mashg'ulotlarni kuzatish
+•  Mashg'ulotlarni kuzatish
 • 📈 Chiroyli statistika
 • 💡 AI dietolog maslahatlari
 • ⚖️ Vazn monitoringi
 
-🎯 *Maqsadingiz sari birinchi qadam!*
+ *Maqsadingiz sari birinchi qadam!*
 
 Quyidagi tugmani bosing va boshlang:
         """
@@ -645,7 +649,7 @@ async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     
     if is_admin(user_id):
         text = """
-📱 *Foydalanuvchi buyruqlar:*
+ *Foydalanuvchi buyruqlar:*
 /start - Boshlash
 /help - Yordam
 
@@ -674,8 +678,9 @@ async def admin_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text("❌ Siz admin emassiz!")
         return
     
-    total_users = User.query.count()
-    food_count = FoodLog.query.count()
+    with app.app_context():
+        total_users = User.query.count()
+        food_count = FoodLog.query.count()
     
     text = f"""
 👨‍💼 *Admin Panel*
@@ -698,7 +703,8 @@ async def users_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text("❌ Siz admin emassiz!")
         return
     
-    users = User.query.limit(20).all()
+    with app.app_context():
+        users = User.query.limit(20).all()
     
     text = "👥 *Foydalanuvchilar:*\n\n"
     for i, user in enumerate(users, 1):
@@ -718,13 +724,14 @@ async def block_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text("❌ Foydalanuvchi ID sini kiriting!")
         return
     
-    target_user = User.query.get(context.args[0])
-    if target_user:
-        target_user.is_blocked = True
-        db.session.commit()
-        await update.message.reply_text(f"✅ Foydalanuvchi {context.args[0]} bloklandi!")
-    else:
-        await update.message.reply_text("❌ Foydalanuvchi topilmadi!")
+    with app.app_context():
+        target_user = User.query.get(context.args[0])
+        if target_user:
+            target_user.is_blocked = True
+            db.session.commit()
+            await update.message.reply_text(f"✅ Foydalanuvchi {context.args[0]} bloklandi!")
+        else:
+            await update.message.reply_text("❌ Foydalanuvchi topilmadi!")
 
 async def unblock_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = str(update.effective_user.id)
@@ -737,13 +744,14 @@ async def unblock_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text("❌ Foydalanuvchi ID sini kiriting!")
         return
     
-    target_user = User.query.get(context.args[0])
-    if target_user:
-        target_user.is_blocked = False
-        db.session.commit()
-        await update.message.reply_text(f"✅ Foydalanuvchi {context.args[0]} blokdan chiqarildi!")
-    else:
-        await update.message.reply_text("❌ Foydalanuvchi topilmadi!")
+    with app.app_context():
+        target_user = User.query.get(context.args[0])
+        if target_user:
+            target_user.is_blocked = False
+            db.session.commit()
+            await update.message.reply_text(f"✅ Foydalanuvchi {context.args[0]} blokdan chiqarildi!")
+        else:
+            await update.message.reply_text("❌ Foydalanuvchi topilmadi!")
 
 async def broadcast_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = str(update.effective_user.id)
@@ -757,7 +765,9 @@ async def broadcast_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
     
     message = ' '.join(context.args)
-    users = User.query.all()
+    
+    with app.app_context():
+        users = User.query.all()
     
     sent_count = 0
     for user in users:
@@ -795,7 +805,7 @@ if __name__ == '__main__':
     flask_thread.start()
     logger.info("✅ Flask started")
     
-    logger.info("🤖 Starting Telegram Bot...")
+    logger.info(" Starting Telegram Bot...")
     
     try:
         application = Application.builder().token(TELEGRAM_BOT_TOKEN).build()
@@ -809,7 +819,7 @@ if __name__ == '__main__':
         application.add_handler(CommandHandler("broadcast", broadcast_command))
         
         logger.info("🤖 Bot running...")
-        logger.info(f"👨‍💼 Admin users: {ADMIN_USERS}")
+        logger.info(f"‍💼 Admin users: {ADMIN_USERS}")
         application.run_polling(drop_pending_updates=True)
     except Exception as e:
         logger.error(f"Bot error: {e}")
