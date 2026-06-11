@@ -262,16 +262,6 @@
             color: #666;
         }
         
-        .edit-btn {
-            background: var(--primary);
-            color: white;
-            border: none;
-            padding: 8px 16px;
-            border-radius: 8px;
-            cursor: pointer;
-            font-weight: 500;
-        }
-        
         .food-list, .workout-list {
             margin-top: 12px;
         }
@@ -310,59 +300,8 @@
             margin-left: 8px;
         }
         
-        /* Modal */
-        .modal {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(0,0,0,0.5);
-            z-index: 10000;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 20px;
-        }
-        
-        .modal-content {
-            background: var(--card-bg);
-            border-radius: 16px;
-            padding: 24px;
-            max-width: 480px;
-            width: 100%;
-            max-height: 90vh;
-            overflow-y: auto;
-        }
-        
-        .modal-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
-        }
-        
-        .modal-close {
-            background: none;
-            border: none;
-            font-size: 28px;
-            cursor: pointer;
-            color: var(--text-dark);
-            width: 36px;
-            height: 36px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border-radius: 50%;
-            transition: background 0.3s;
-        }
-        
-        .modal-close:hover {
-            background: var(--bg-light);
-        }
-        
-        /* AI Chat */
-        .chat-container {
+        /* AI Chat Full Screen */
+        .chat-screen {
             position: fixed;
             top: 0;
             left: 0;
@@ -387,45 +326,60 @@
             background: none;
             border: none;
             color: white;
-            font-size: 24px;
+            font-size: 28px;
             cursor: pointer;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+        }
+        
+        .chat-close:hover {
+            background: rgba(255,255,255,0.2);
         }
         
         .chat-messages {
             flex: 1;
             overflow-y: auto;
             padding: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
         }
         
         .chat-message {
-            margin-bottom: 12px;
-            padding: 12px;
-            border-radius: 12px;
-            max-width: 80%;
+            padding: 12px 16px;
+            border-radius: 16px;
+            max-width: 85%;
+            line-height: 1.5;
         }
         
         .chat-message.ai {
             background: var(--bg-light);
             align-self: flex-start;
+            border-bottom-left-radius: 4px;
         }
         
         .chat-message.user {
             background: var(--primary);
             color: white;
             align-self: flex-end;
-            margin-left: auto;
+            border-bottom-right-radius: 4px;
         }
         
-        .chat-input {
+        .chat-input-area {
             padding: 16px;
             border-top: 1px solid #e5e7eb;
             display: flex;
             gap: 8px;
+            background: var(--card-bg);
         }
         
-        .chat-input input {
+        .chat-input-area input {
             flex: 1;
-            padding: 12px;
+            padding: 12px 16px;
             border: 2px solid #e5e7eb;
             border-radius: 25px;
             font-size: 15px;
@@ -433,14 +387,15 @@
             color: var(--text-dark);
         }
         
-        .chat-input button {
+        .chat-input-area button {
             background: var(--primary);
             color: white;
             border: none;
-            padding: 12px 24px;
+            padding: 12px 20px;
             border-radius: 25px;
             cursor: pointer;
             font-weight: 600;
+            white-space: nowrap;
         }
         
         /* Settings */
@@ -487,47 +442,63 @@
             to { transform: translateX(0); opacity: 1; }
         }
         
-        /* Quick Tips */
-        .tips-grid {
+        /* AI Welcome Card */
+        .ai-welcome {
+            text-align: center;
+            padding: 20px;
+        }
+        
+        .ai-welcome img {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            margin-bottom: 16px;
+        }
+        
+        .quick-questions {
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 12px;
-            margin-top: 12px;
+            gap: 10px;
+            margin-top: 16px;
         }
         
-        .tip-card {
+        .quick-q-btn {
             background: var(--bg-light);
-            padding: 16px;
+            border: 2px solid transparent;
+            padding: 12px;
             border-radius: 12px;
+            cursor: pointer;
             text-align: center;
+            transition: all 0.3s;
+            font-size: 13px;
         }
         
-        .tip-icon {
-            font-size: 32px;
-            margin-bottom: 8px;
+        .quick-q-btn:hover {
+            border-color: var(--primary);
+            background: white;
         }
         
-        .tip-text {
-            font-size: 12px;
-            color: #666;
+        .quick-q-icon {
+            font-size: 28px;
+            margin-bottom: 6px;
         }
     </style>
 </head>
 <body>
     <div class="container">
         <div id="loading" class="loading">
-            <div>Yuklanmoqda...</div>
+            <div data-i18n="loading">Yuklanmoqda...</div>
         </div>
         
         <!-- Dashboard Tab -->
         <div id="tab-dashboard" class="tab-content active">
             <div class="header">
-                <h1> Kaloriya Tracker</h1>
-                <span class="badge">✨ Gemini 3.5 Flash</span>
+                <h1 data-i18n="appTitle">🔥 Kaloriya Tracker</h1>
+                <span class="badge">✨ Gemini 3.5 Flash + Qwen AI</span>
                 <p id="userName">Xush kelibsiz!</p>
             </div>
             
-            <!-- Profile Info -->
+            <!-- Profile Info (Simple) -->
             <div class="card">
                 <div class="profile-section">
                     <div class="profile-info">
@@ -535,50 +506,49 @@
                             <div class="profile-name" id="profileName">-</div>
                             <div class="profile-stats" id="profileStats">-</div>
                         </div>
-                        <button class="edit-btn" onclick="switchTab('settings')">️</button>
                     </div>
                 </div>
             </div>
             
             <!-- Daily Stats -->
             <div class="card">
-                <h2 class="card-title">📊 Bugungi natijalar</h2>
+                <h2 class="card-title">📊 <span data-i18n="todayResults">Bugungi natijalar</span></h2>
                 <div class="stats-grid">
                     <div class="stat-item">
                         <span class="stat-value" id="consumedCal">0</span>
-                        <div class="stat-label">Yegan</div>
+                        <div class="stat-label" data-i18n="eaten">Yegan</div>
                     </div>
                     <div class="stat-item">
                         <span class="stat-value" id="remainingCal">0</span>
-                        <div class="stat-label">Qolgan</div>
+                        <div class="stat-label" data-i18n="remaining">Qolgan</div>
                     </div>
                 </div>
                 <div style="margin-top: 12px; padding: 12px; background: var(--bg-light); border-radius: 8px;">
                     <div style="font-size: 14px; text-align: center;">
-                        <strong>Kunlik norma:</strong> <span id="dailyNorm">0</span> kcal
+                        <strong data-i18n="dailyNorm">Kunlik norma:</strong> <span id="dailyNorm">0</span> kcal
                     </div>
                 </div>
             </div>
             
             <!-- Bugungi ovqatlar -->
             <div class="card">
-                <h2 class="card-title">️ Bugungi ovqatlar</h2>
+                <h2 class="card-title">🍽️ <span data-i18n="todayFood">Bugungi ovqatlar</span></h2>
                 <div id="todayFoodList" class="food-list">
-                    <div style="text-align: center; color: #999; padding: 20px;">Hali ovqat qo'shilmagan</div>
+                    <div style="text-align: center; color: #999; padding: 20px;" data-i18n="noFood">Hali ovqat qo'shilmagan</div>
                 </div>
             </div>
             
             <!-- Bugungi mashg'ulotlar -->
             <div class="card">
-                <h2 class="card-title"> Bugungi mashg'ulotlar</h2>
+                <h2 class="card-title">🏃 <span data-i18n="todayWorkouts">Bugungi mashg'ulotlar</span></h2>
                 <div id="todayWorkoutList" class="workout-list">
-                    <div style="text-align: center; color: #999; padding: 20px;">Hali mashg'ulot qo'shilmagan</div>
+                    <div style="text-align: center; color: #999; padding: 20px;" data-i18n="noWorkouts">Hali mashg'ulot qo'shilmagan</div>
                 </div>
             </div>
             
             <!-- Water Tracker -->
             <div class="card">
-                <h2 class="card-title"> Suv</h2>
+                <h2 class="card-title">💧 <span data-i18n="water">Suv</span></h2>
                 <div style="text-align: center; margin-bottom: 12px;">
                     <span id="waterAmount" style="font-size: 24px; font-weight: 700; color: var(--primary);">0</span> ml / 2000 ml
                 </div>
@@ -590,162 +560,136 @@
                     <button class="water-btn" onclick="addWater(500)">+500ml</button>
                 </div>
             </div>
-            
-            <!-- Quick Tips -->
-            <div class="card">
-                <h2 class="card-title">💡 Tezkor maslahatlar</h2>
-                <div class="tips-grid">
-                    <div class="tip-card">
-                        <div class="tip-icon">💧</div>
-                        <div class="tip-text">Kuniga 2L suv iching</div>
-                    </div>
-                    <div class="tip-card">
-                        <div class="tip-icon">🥗</div>
-                        <div class="tip-text">Sabzavotlar ko'proq</div>
-                    </div>
-                    <div class="tip-card">
-                        <div class="tip-icon">🏃</div>
-                        <div class="tip-text">30 daqiqa sport</div>
-                    </div>
-                    <div class="tip-card">
-                        <div class="tip-icon">😴</div>
-                        <div class="tip-text">7-8 soat uyqu</div>
-                    </div>
-                </div>
-            </div>
         </div>
         
         <!-- Food Tab -->
         <div id="tab-food" class="tab-content">
             <div class="header">
-                <h1>🍔 Ovqat qo'shish</h1>
-                <p>Ovqat nomini yozing, AI kaloriyani hisoblaydi</p>
+                <h1 data-i18n="addFoodTitle">🍔 Ovqat qo'shish</h1>
+                <p data-i18n="addFoodDesc">Ovqat nomini yozing, AI kaloriyani hisoblaydi</p>
             </div>
             
             <div class="card">
-                <h2 class="card-title"> Yangi ovqat <span class="ai-badge">AI</span></h2>
+                <h2 class="card-title">🆕 <span data-i18n="newFood">Yangi ovqat</span> <span class="ai-badge">AI</span></h2>
                 <div class="input-group">
-                    <label>Ovqat nomi</label>
+                    <label data-i18n="foodNameLabel">Ovqat nomi</label>
                     <input type="text" id="foodName" placeholder="Masalan: non, osh, olma...">
                 </div>
-                <button class="btn btn-primary" onclick="addFood(event)">Kaloriyani hisoblash</button>
+                <button class="btn btn-primary" onclick="addFood(event)" data-i18n="calculateBtn">Kaloriyani hisoblash</button>
             </div>
             
             <div class="card">
-                <h2 class="card-title">🏃 Mashg'ulot qo'shish</h2>
+                <h2 class="card-title">🏃 <span data-i18n="addWorkout">Mashg'ulot qo'shish</span></h2>
                 <div class="input-group">
-                    <label>Mashg'ulot nomi</label>
+                    <label data-i18n="workoutNameLabel">Mashg'ulot nomi</label>
                     <input type="text" id="workoutName" placeholder="Masalan: yugurish, suzish...">
                 </div>
                 <div class="input-group">
-                    <label>Davomiyligi (daqiqa)</label>
+                    <label data-i18n="durationLabel">Davomiyligi (daqiqa)</label>
                     <input type="number" id="workoutDuration" placeholder="30" value="30">
                 </div>
-                <button class="btn btn-primary" onclick="addWorkout()">Saqlash</button>
+                <button class="btn btn-primary" onclick="addWorkout()" data-i18n="saveBtn">Saqlash</button>
             </div>
             
             <div class="card">
-                <h2 class="card-title">🍽️ Bugungi ovqatlar</h2>
+                <h2 class="card-title">🍽️ <span data-i18n="todayFood">Bugungi ovqatlar</span></h2>
                 <div id="foodTabList" class="food-list">
-                    <div style="text-align: center; color: #999; padding: 20px;">Hali ovqat qo'shilmagan</div>
+                    <div style="text-align: center; color: #999; padding: 20px;" data-i18n="noFood">Hali ovqat qo'shilmagan</div>
                 </div>
             </div>
             
             <div class="card">
-                <h2 class="card-title">🏃 Bugungi mashg'ulotlar</h2>
+                <h2 class="card-title">🏃 <span data-i18n="todayWorkouts">Bugungi mashg'ulotlar</span></h2>
                 <div id="workoutTabList" class="workout-list">
-                    <div style="text-align: center; color: #999; padding: 20px;">Hali mashg'ulot qo'shilmagan</div>
+                    <div style="text-align: center; color: #999; padding: 20px;" data-i18n="noWorkouts">Hali mashg'ulot qo'shilmagan</div>
                 </div>
             </div>
         </div>
         
-        <!-- AI Chat Tab -->
+        <!-- AI Dietolog Tab -->
         <div id="tab-ai" class="tab-content">
             <div class="header">
-                <h1>💡 AI Dietolog</h1>
-                <p>Professional maslahatlar oling</p>
+                <h1>💡 <span data-i18n="aiDietolog">AI Dietolog</span></h1>
+                <p data-i18n="aiDesc">Professional maslahatlar oling</p>
             </div>
             
+            <!-- AI Welcome Card with Robot Image -->
             <div class="card">
-                <h2 class="card-title">💬 Savol bering <span class="ai-badge">AI</span></h2>
-                <div class="input-group">
-                    <label>Savolingiz</label>
-                    <input type="text" id="aiQuestion" placeholder="Masalan: Kuniga qancha suv ichish kerak?">
+                <div class="ai-welcome">
+                    <img src="https://images.unsplash.com/photo-1484723091739-30a097e8f929?w=200&h=200&fit=crop" alt="AI Robot" style="width: 100px; height: 100px; border-radius: 50%; object-fit: cover; margin-bottom: 12px;">
+                    <h3 data-i18n="askAI">💬 Savol bering</h3>
+                    <p style="color: #666; font-size: 14px; margin-top: 8px;" data-i18n="askAIDesc">Suv, parhez, vazn haqida savollaringiz bormi?</p>
+                    
+                    <div class="quick-questions">
+                        <div class="quick-q-btn" onclick="openChatWithQuestion('Kuniga qancha suv ichish kerak?')">
+                            <div class="quick-q-icon">💧</div>
+                            <div data-i18n="q1">Suv iste'moli</div>
+                        </div>
+                        <div class="quick-q-btn" onclick="openChatWithQuestion('Vazn yo\'qotish uchun nima qilish kerak?')">
+                            <div class="quick-q-icon">⚖️</div>
+                            <div data-i18n="q2">Vazn yo'qotish</div>
+                        </div>
+                        <div class="quick-q-btn" onclick="openChatWithQuestion('Eng foydali ovqatlar qaysilar?')">
+                            <div class="quick-q-icon">🥗</div>
+                            <div data-i18n="q3">Foydali ovqatlar</div>
+                        </div>
+                        <div class="quick-q-btn" onclick="openChatWithQuestion('Sportdan oldin nima yeyish kerak?')">
+                            <div class="quick-q-icon">🏃</div>
+                            <div data-i18n="q4">Sport va ovqat</div>
+                        </div>
+                    </div>
                 </div>
-                <button class="btn btn-primary" onclick="askAI()">Javob olish</button>
             </div>
             
+            <!-- Open Chat Button -->
             <div class="card">
-                <h2 class="card-title">📝 AI Javoblari</h2>
-                <div id="aiResponses">
-                    <div style="text-align: center; color: #999; padding: 20px;">Hali savol bermagansiz</div>
-                </div>
-            </div>
-            
-            <div class="card">
-                <h2 class="card-title">💡 Tezkor maslahatlar</h2>
-                <div class="tips-grid">
-                    <div class="tip-card" onclick="quickAsk('Kuniga qancha suv ichish kerak?')">
-                        <div class="tip-icon">💧</div>
-                        <div class="tip-text">Suv iste'moli</div>
-                    </div>
-                    <div class="tip-card" onclick="quickAsk('Vazn yo\'qotish uchun nima qilish kerak?')">
-                        <div class="tip-icon">⚖️</div>
-                        <div class="tip-text">Vazn yo'qotish</div>
-                    </div>
-                    <div class="tip-card" onclick="quickAsk('Eng foydali ovqatlar qaysilar?')">
-                        <div class="tip-icon">🥗</div>
-                        <div class="tip-text">Foydali ovqatlar</div>
-                    </div>
-                    <div class="tip-card" onclick="quickAsk('Sportdan oldin nima yeyish kerak?')">
-                        <div class="tip-icon">🏃</div>
-                        <div class="tip-text">Sport va ovqat</div>
-                    </div>
-                </div>
+                <button class="btn btn-primary" onclick="openChat()" style="font-size: 18px; padding: 18px;">
+                    💬 <span data-i18n="openChat">Chatni ochish</span>
+                </button>
             </div>
         </div>
         
         <!-- Settings Tab -->
         <div id="tab-settings" class="tab-content">
             <div class="header">
-                <h1>⚙️ Sozlamalar</h1>
-                <p>Profilingizni boshqaring</p>
+                <h1>⚙️ <span data-i18n="settings">Sozlamalar</span></h1>
+                <p data-i18n="settingsDesc">Profilingizni boshqaring</p>
             </div>
             
             <div class="card">
-                <h2 class="card-title">👤 Profil ma'lumotlari</h2>
+                <h2 class="card-title">👤 <span data-i18n="profileInfo">Profil ma'lumotlari</span></h2>
                 <div class="input-group">
-                    <label>Ism</label>
+                    <label data-i18n="nameLabel">Ism</label>
                     <input type="text" id="editName" placeholder="Ismingiz">
                 </div>
                 <div class="input-group">
-                    <label>Vazn (kg)</label>
+                    <label data-i18n="weightLabel">Vazn (kg)</label>
                     <input type="number" id="editWeight" placeholder="70" step="0.1">
                 </div>
                 <div class="input-group">
-                    <label>Bo'y (cm)</label>
+                    <label data-i18n="heightLabel">Bo'y (cm)</label>
                     <input type="number" id="editHeight" placeholder="175">
                 </div>
                 <div class="input-group">
-                    <label>Yosh</label>
+                    <label data-i18n="ageLabel">Yosh</label>
                     <input type="number" id="editAge" placeholder="25">
                 </div>
                 <div class="input-group">
-                    <label>Maqsad</label>
+                    <label data-i18n="goalLabel">Maqsad</label>
                     <select id="editGoal">
-                        <option value="lose">Vazn yo'qotish</option>
-                        <option value="maintain">Saqlash</option>
-                        <option value="gain">Vazn to'plash</option>
+                        <option value="lose" data-i18n="goalLose">Vazn yo'qotish</option>
+                        <option value="maintain" data-i18n="goalMaintain">Saqlash</option>
+                        <option value="gain" data-i18n="goalGain">Vazn to'plash</option>
                     </select>
                 </div>
-                <button class="btn btn-primary" onclick="saveProfile()">Saqlash</button>
+                <button class="btn btn-primary" onclick="saveProfile()" data-i18n="saveBtn">Saqlash</button>
             </div>
             
             <div class="card">
-                <h2 class="card-title">🎨 Ko'rinish</h2>
+                <h2 class="card-title">🎨 <span data-i18n="appearance">Ko'rinish</span></h2>
                 <div class="settings-item" onclick="toggleTheme()">
                     <div>
-                        <div class="settings-label">🌓 Mavzu</div>
+                        <div class="settings-label">🌓 <span data-i18n="theme">Mavzu</span></div>
                         <div class="settings-value" id="themeValue">Yorug'</div>
                     </div>
                     <div>›</div>
@@ -753,7 +697,7 @@
             </div>
             
             <div class="card">
-                <h2 class="card-title"> Til</h2>
+                <h2 class="card-title">🌐 <span data-i18n="language">Til</span></h2>
                 <div class="input-group">
                     <select id="languageSelect" onchange="changeLanguage()">
                         <option value="uz">🇺 O'zbek</option>
@@ -763,11 +707,11 @@
             </div>
             
             <div class="card">
-                <h2 class="card-title">📊 Statistika</h2>
+                <h2 class="card-title">📊 <span data-i18n="stats">Statistika</span></h2>
                 <select id="periodSelect" onchange="loadStatistics()" style="width: 100%; padding: 8px; margin-bottom: 12px; border-radius: 8px;">
-                    <option value="7">So'nggi 7 kun</option>
-                    <option value="15">So'nggi 15 kun</option>
-                    <option value="30">So'nggi 30 kun</option>
+                    <option value="7" data-i18n="last7">So'nggi 7 kun</option>
+                    <option value="15" data-i18n="last15">So'nggi 15 kun</option>
+                    <option value="30" data-i18n="last30">So'nggi 30 kun</option>
                 </select>
                 <div class="chart-container">
                     <canvas id="caloriesChart"></canvas>
@@ -775,14 +719,31 @@
             </div>
             
             <div class="card">
-                <h2 class="card-title">ℹ️ Ilova haqida</h2>
+                <h2 class="card-title">ℹ️ <span data-i18n="about">Ilova haqida</span></h2>
                 <p style="color: #666; font-size: 14px;">
                     <strong>Kaloriya Tracker Pro</strong><br>
                     Versiya: 1.0.0<br>
-                    Powered by Gemini 3.5 Flash<br><br>
-                    Sog'lom hayot uchun professional kaloriya trackeri.
+                    Powered by Gemini 3.5 Flash + Qwen AI<br><br>
+                    <span data-i18n="aboutDesc">Sog'lom hayot uchun professional kaloriya trackeri.</span>
                 </p>
             </div>
+        </div>
+    </div>
+    
+    <!-- AI Chat Full Screen -->
+    <div id="aiChatScreen" class="chat-screen hidden">
+        <div class="chat-header">
+            <h3>💡 <span data-i18n="aiDietolog">AI Dietolog</span></h3>
+            <button class="chat-close" onclick="closeChat()">×</button>
+        </div>
+        <div class="chat-messages" id="chatMessages">
+            <div class="chat-message ai" data-i18n="aiWelcome">
+                Salom! Men sizning AI dietologingizman. Suv iste'moli, parhez, ovqatlanish haqida savollaringiz bo'lsa, bering! 😊
+            </div>
+        </div>
+        <div class="chat-input-area">
+            <input type="text" id="chatInput" data-i18n-placeholder="chatPlaceholder" placeholder="Savolingizni yozing..." onkeypress="if(event.key==='Enter') sendMessage()">
+            <button onclick="sendMessage()" data-i18n="sendBtn">Yuborish</button>
         </div>
     </div>
     
@@ -790,19 +751,19 @@
     <div class="bottom-nav">
         <div class="nav-item active" onclick="switchTab('dashboard')">
             <div class="nav-icon">🏠</div>
-            <div class="nav-label">Dashboard</div>
+            <div class="nav-label" data-i18n="navDashboard">Dashboard</div>
         </div>
         <div class="nav-item" onclick="switchTab('food')">
             <div class="nav-icon">🍔</div>
-            <div class="nav-label">Ovqat</div>
+            <div class="nav-label" data-i18n="navFood">Ovqat</div>
         </div>
         <div class="nav-item" onclick="switchTab('ai')">
             <div class="nav-icon">💡</div>
-            <div class="nav-label">AI Dietolog</div>
+            <div class="nav-label" data-i18n="navAI">AI Dietolog</div>
         </div>
         <div class="nav-item" onclick="switchTab('settings')">
             <div class="nav-icon">⚙️</div>
-            <div class="nav-label">Sozlamalar</div>
+            <div class="nav-label" data-i18n="navSettings">Sozlamalar</div>
         </div>
     </div>
     
@@ -830,49 +791,140 @@
         let todayFood = [];
         let todayWorkouts = [];
         
+        // ================= TRANSLATIONS =================
         const translations = {
             uz: {
-                dashboard: "Dashboard",
-                food: "Ovqat",
-                ai: "AI Dietolog",
-                settings: "Sozlamalar",
-                today: "Bugungi natijalar",
+                loading: "Yuklanmoqda...",
+                appTitle: "🔥 Kaloriya Tracker",
+                welcome: "Xush kelibsiz!",
+                todayResults: "Bugungi natijalar",
                 eaten: "Yegan",
                 remaining: "Qolgan",
+                dailyNorm: "Kunlik norma:",
+                todayFood: "Bugungi ovqatlar",
+                todayWorkouts: "Bugungi mashg'ulotlar",
+                noFood: "Hali ovqat qo'shilmagan",
+                noWorkouts: "Hali mashg'ulot qo'shilmagan",
                 water: "Suv",
-                addFood: "Ovqat qo'shish",
-                calculate: "Kaloriyani hisoblash",
-                workout: "Mashg'ulot",
-                logWorkout: "Saqlash",
-                weight: "Vazn o'lchash",
-                save: "Saqlash",
-                aiTips: "AI Dietolog",
-                getTips: "Chatni ochish",
-                stats: "Statistika"
+                addFoodTitle: "🍔 Ovqat qo'shish",
+                addFoodDesc: "Ovqat nomini yozing, AI kaloriyani hisoblaydi",
+                newFood: "Yangi ovqat",
+                foodNameLabel: "Ovqat nomi",
+                calculateBtn: "Kaloriyani hisoblash",
+                addWorkout: "Mashg'ulot qo'shish",
+                workoutNameLabel: "Mashg'ulot nomi",
+                durationLabel: "Davomiyligi (daqiqa)",
+                saveBtn: "Saqlash",
+                aiDietolog: "AI Dietolog",
+                aiDesc: "Professional maslahatlar oling",
+                askAI: "💬 Savol bering",
+                askAIDesc: "Suv, parhez, vazn haqida savollaringiz bormi?",
+                q1: "Suv iste'moli",
+                q2: "Vazn yo'qotish",
+                q3: "Foydali ovqatlar",
+                q4: "Sport va ovqat",
+                openChat: "Chatni ochish",
+                settings: "Sozlamalar",
+                settingsDesc: "Profilingizni boshqaring",
+                profileInfo: "Profil ma'lumotlari",
+                nameLabel: "Ism",
+                weightLabel: "Vazn (kg)",
+                heightLabel: "Bo'y (cm)",
+                ageLabel: "Yosh",
+                goalLabel: "Maqsad",
+                goalLose: "Vazn yo'qotish",
+                goalMaintain: "Saqlash",
+                goalGain: "Vazn to'plash",
+                appearance: "Ko'rinish",
+                theme: "Mavzu",
+                language: "Til",
+                stats: "Statistika",
+                last7: "So'nggi 7 kun",
+                last15: "So'nggi 15 kun",
+                last30: "So'nggi 30 kun",
+                about: "Ilova haqida",
+                aboutDesc: "Sog'lom hayot uchun professional kaloriya trackeri.",
+                navDashboard: "Dashboard",
+                navFood: "Ovqat",
+                navAI: "AI Dietolog",
+                navSettings: "Sozlamalar",
+                aiWelcome: "Salom! Men sizning AI dietologingizman. Suv iste'moli, parhez, ovqatlanish haqida savollaringiz bo'lsa, bering! 😊",
+                chatPlaceholder: "Savolingizni yozing...",
+                sendBtn: "Yuborish",
+                light: "Yorug'",
+                dark: "Qorong'u",
+                lose: "Vazn yo'qotish",
+                maintain: "Saqlash",
+                gain: "Vazn to'plash"
             },
             ru: {
-                dashboard: "Главная",
-                food: "Еда",
-                ai: "AI Диетолог",
-                settings: "Настройки",
-                today: "Сегодня",
+                loading: "Загрузка...",
+                appTitle: "🔥 Трекер Калорий",
+                welcome: "Добро пожаловать!",
+                todayResults: "Сегодня",
                 eaten: "Съедено",
                 remaining: "Осталось",
+                dailyNorm: "Норма в день:",
+                todayFood: "Сегодняшняя еда",
+                todayWorkouts: "Сегодняшние тренировки",
+                noFood: "Пока нет еды",
+                noWorkouts: "Пока нет тренировок",
                 water: "Вода",
-                addFood: "Добавить еду",
-                calculate: "Посчитать калории",
-                workout: "Тренировка",
-                logWorkout: "Сохранить",
-                weight: "Вес",
-                save: "Сохранить",
-                aiTips: "AI Диетолог",
-                getTips: "Открыть чат",
-                stats: "Статистика"
+                addFoodTitle: "🍔 Добавить еду",
+                addFoodDesc: "Напишите название еды, AI посчитает калории",
+                newFood: "Новая еда",
+                foodNameLabel: "Название еды",
+                calculateBtn: "Посчитать калории",
+                addWorkout: "Добавить тренировку",
+                workoutNameLabel: "Название тренировки",
+                durationLabel: "Длительность (минут)",
+                saveBtn: "Сохранить",
+                aiDietolog: "AI Диетолог",
+                aiDesc: "Получите профессиональные советы",
+                askAI: "💬 Задайте вопрос",
+                askAIDesc: "Есть вопросы о воде, диете, весе?",
+                q1: "Потребление воды",
+                q2: "Похудение",
+                q3: "Полезная еда",
+                q4: "Спорт и еда",
+                openChat: "Открыть чат",
+                settings: "Настройки",
+                settingsDesc: "Управляйте профилем",
+                profileInfo: "Информация профиля",
+                nameLabel: "Имя",
+                weightLabel: "Вес (кг)",
+                heightLabel: "Рост (см)",
+                ageLabel: "Возраст",
+                goalLabel: "Цель",
+                goalLose: "Похудеть",
+                goalMaintain: "Поддержать",
+                goalGain: "Набрать вес",
+                appearance: "Внешний вид",
+                theme: "Тема",
+                language: "Язык",
+                stats: "Статистика",
+                last7: "Последние 7 дней",
+                last15: "Последние 15 дней",
+                last30: "Последние 30 дней",
+                about: "О приложении",
+                aboutDesc: "Профессиональный трекер калорий для здоровой жизни.",
+                navDashboard: "Главная",
+                navFood: "Еда",
+                navAI: "AI Диетолог",
+                navSettings: "Настройки",
+                aiWelcome: "Привет! Я ваш AI диетолог. Задавайте вопросы о воде, диете, питании! 😊",
+                chatPlaceholder: "Напишите ваш вопрос...",
+                sendBtn: "Отправить",
+                light: "Светлая",
+                dark: "Тёмная",
+                lose: "Похудеть",
+                maintain: "Поддержать",
+                gain: "Набрать вес"
             }
         };
         
+        // ================= INITIALIZATION =================
         window.onload = async function() {
-            // Dashboard birinchi ochilishi
             switchTab('dashboard');
             await checkUser();
         };
@@ -926,7 +978,7 @@
                     currentUser = userData;
                     showDashboard(userData, 0, 0);
                     setTimeout(function() {
-                        tg.showAlert('Xush kelibsiz! Profilingiz yaratildi.');
+                        tg.showAlert(currentLang === 'ru' ? 'Добро пожаловать! Профиль создан.' : 'Xush kelibsiz! Profilingiz yaratildi.');
                     }, 500);
                 }
             } catch (error) {
@@ -934,35 +986,86 @@
             }
         }
         
+        // ================= TAB SWITCHING =================
         function switchTab(tabName) {
-            // Hide all tabs
             document.querySelectorAll('.tab-content').forEach(function(tab) {
                 tab.classList.remove('active');
             });
-            
-            // Remove active from nav
             document.querySelectorAll('.nav-item').forEach(function(item) {
                 item.classList.remove('active');
             });
-            
-            // Show selected tab
             document.getElementById('tab-' + tabName).classList.add('active');
-            
-            // Set active nav
             const navItems = document.querySelectorAll('.nav-item');
             const tabIndex = ['dashboard', 'food', 'ai', 'settings'].indexOf(tabName);
-            if (tabIndex >= 0) {
-                navItems[tabIndex].classList.add('active');
-            }
-            
-            // Load data for tab
-            if (tabName === 'food') {
-                renderFoodTab();
-            } else if (tabName === 'settings') {
-                loadSettings();
-            }
+            if (tabIndex >= 0) navItems[tabIndex].classList.add('active');
+            if (tabName === 'food') renderFoodTab();
+            if (tabName === 'settings') loadSettings();
         }
         
+        // ================= LANGUAGE =================
+        function updateLanguage() {
+            const t = translations[currentLang];
+            if (!t) return;
+            
+            // Update all elements with data-i18n
+            document.querySelectorAll('[data-i18n]').forEach(function(el) {
+                const key = el.getAttribute('data-i18n');
+                if (t[key]) el.textContent = t[key];
+            });
+            
+            // Update placeholders
+            document.querySelectorAll('[data-i18n-placeholder]').forEach(function(el) {
+                const key = el.getAttribute('data-i18n-placeholder');
+                if (t[key]) el.placeholder = t[key];
+            });
+            
+            // Update profile stats
+            if (currentUser) {
+                const goalText = t[currentUser.goal] || currentUser.goal;
+                document.getElementById('profileStats').textContent = currentUser.weight + ' kg | ' + goalText;
+            }
+            
+            // Update theme value
+            const theme = document.body.getAttribute('data-theme');
+            document.getElementById('themeValue').textContent = theme === 'dark' ? t.dark : t.light;
+        }
+        
+        function changeLanguage() {
+            currentLang = document.getElementById('languageSelect').value;
+            updateLanguage();
+            
+            fetch('/api/user/' + userId, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ language: currentLang })
+            });
+        }
+        
+        // ================= DASHBOARD =================
+        function showDashboard(user, calories, water) {
+            const t = translations[currentLang];
+            document.getElementById('userName').textContent = t.welcome + ', ' + (user.name || 'User') + '!';
+            document.getElementById('profileName').textContent = user.name || 'User';
+            const goalText = t[user.goal] || user.goal;
+            document.getElementById('profileStats').textContent = user.weight + ' kg | ' + goalText;
+            document.getElementById('dailyNorm').textContent = dailyNorm;
+            updateDailyStats(calories);
+            document.getElementById('waterAmount').textContent = water || 0;
+            const waterPercent = Math.min(((water || 0) / 2000) * 100, 100);
+            document.getElementById('waterProgress').style.width = waterPercent + '%';
+        }
+        
+        function updateDailyStats(consumed) {
+            const totalBurned = todayWorkouts.reduce(function(sum, w) {
+                return sum + parseInt(w.calories_burned || 0);
+            }, 0);
+            const netCalories = consumed - totalBurned;
+            const remaining = dailyNorm - netCalories;
+            document.getElementById('consumedCal').textContent = netCalories;
+            document.getElementById('remainingCal').textContent = remaining;
+        }
+        
+        // ================= DATA LOADING =================
         async function loadTodayData() {
             try {
                 const foodResponse = await fetch('/api/food/today/' + userId);
@@ -985,126 +1088,82 @@
         
         function renderTodayFood() {
             const container = document.getElementById('todayFoodList');
+            const t = translations[currentLang];
             if (todayFood.length === 0) {
-                container.innerHTML = '<div style="text-align: center; color: #999; padding: 20px;">Hali ovqat qo\'shilmagan</div>';
+                container.innerHTML = '<div style="text-align: center; color: #999; padding: 20px;">' + (t.noFood || 'Hali ovqat qo\'shilmagan') + '</div>';
                 return;
             }
-            
             let html = '';
             todayFood.forEach(function(food) {
                 html += '<div class="food-item">' +
-                    '<div>' +
-                        '<div class="food-name">' + food.food_name + '</div>' +
-                        '<div style="font-size: 12px; color: #666;">' + food.details + '</div>' +
-                    '</div>' +
+                    '<div><div class="food-name">' + food.food_name + '</div>' +
+                    '<div style="font-size: 12px; color: #666;">' + food.details + '</div></div>' +
                     '<div style="display: flex; align-items: center;">' +
-                        '<span class="food-calories">' + food.calories + ' kcal</span>' +
-                        '<button class="delete-btn" onclick="deleteFood(\'' + food.log_id + '\')">×</button>' +
-                    '</div>' +
-                '</div>';
+                    '<span class="food-calories">' + food.calories + ' kcal</span>' +
+                    '<button class="delete-btn" onclick="deleteFood(\'' + food.log_id + '\')">×</button></div></div>';
             });
             container.innerHTML = html;
         }
         
         function renderTodayWorkouts() {
             const container = document.getElementById('todayWorkoutList');
+            const t = translations[currentLang];
             if (todayWorkouts.length === 0) {
-                container.innerHTML = '<div style="text-align: center; color: #999; padding: 20px;">Hali mashg\'ulot qo\'shilmagan</div>';
+                container.innerHTML = '<div style="text-align: center; color: #999; padding: 20px;">' + (t.noWorkouts || 'Hali mashg\'ulot qo\'shilmagan') + '</div>';
                 return;
             }
-            
             let html = '';
             todayWorkouts.forEach(function(workout) {
                 html += '<div class="workout-item">' +
-                    '<div>' +
-                        '<div class="workout-name">' + workout.workout_name + '</div>' +
-                        '<div style="font-size: 12px; color: #666;">' + workout.duration_min + ' daqiqa</div>' +
-                    '</div>' +
+                    '<div><div class="workout-name">' + workout.workout_name + '</div>' +
+                    '<div style="font-size: 12px; color: #666;">' + workout.duration_min + ' daqiqa</div></div>' +
                     '<div style="display: flex; align-items: center;">' +
-                        '<span class="workout-calories">-' + workout.calories_burned + ' kcal</span>' +
-                        '<button class="delete-btn" onclick="deleteWorkout(\'' + workout.log_id + '\')">×</button>' +
-                    '</div>' +
-                '</div>';
+                    '<span class="workout-calories">-' + workout.calories_burned + ' kcal</span>' +
+                    '<button class="delete-btn" onclick="deleteWorkout(\'' + workout.log_id + '\')">×</button></div></div>';
             });
             container.innerHTML = html;
         }
         
         function renderFoodTab() {
             const foodContainer = document.getElementById('foodTabList');
+            const workoutContainer = document.getElementById('workoutTabList');
+            const t = translations[currentLang];
+            
             if (todayFood.length === 0) {
-                foodContainer.innerHTML = '<div style="text-align: center; color: #999; padding: 20px;">Hali ovqat qo\'shilmagan</div>';
+                foodContainer.innerHTML = '<div style="text-align: center; color: #999; padding: 20px;">' + (t.noFood || 'Hali ovqat qo\'shilmagan') + '</div>';
             } else {
                 let html = '';
                 todayFood.forEach(function(food) {
-                    html += '<div class="food-item">' +
-                        '<div>' +
-                            '<div class="food-name">' + food.food_name + '</div>' +
-                            '<div style="font-size: 12px; color: #666;">' + food.details + '</div>' +
-                        '</div>' +
-                        '<div style="display: flex; align-items: center;">' +
-                            '<span class="food-calories">' + food.calories + ' kcal</span>' +
-                            '<button class="delete-btn" onclick="deleteFood(\'' + food.log_id + '\')">×</button>' +
-                        '</div>' +
-                    '</div>';
+                    html += '<div class="food-item"><div><div class="food-name">' + food.food_name + '</div>' +
+                        '<div style="font-size: 12px; color: #666;">' + food.details + '</div></div>' +
+                        '<div style="display: flex; align-items: center;"><span class="food-calories">' + food.calories + ' kcal</span>' +
+                        '<button class="delete-btn" onclick="deleteFood(\'' + food.log_id + '\')">×</button></div></div>';
                 });
                 foodContainer.innerHTML = html;
             }
             
-            const workoutContainer = document.getElementById('workoutTabList');
             if (todayWorkouts.length === 0) {
-                workoutContainer.innerHTML = '<div style="text-align: center; color: #999; padding: 20px;">Hali mashg\'ulot qo\'shilmagan</div>';
+                workoutContainer.innerHTML = '<div style="text-align: center; color: #999; padding: 20px;">' + (t.noWorkouts || 'Hali mashg\'ulot qo\'shilmagan') + '</div>';
             } else {
                 let html = '';
                 todayWorkouts.forEach(function(workout) {
-                    html += '<div class="workout-item">' +
-                        '<div>' +
-                            '<div class="workout-name">' + workout.workout_name + '</div>' +
-                            '<div style="font-size: 12px; color: #666;">' + workout.duration_min + ' daqiqa</div>' +
-                        '</div>' +
-                        '<div style="display: flex; align-items: center;">' +
-                            '<span class="workout-calories">-' + workout.calories_burned + ' kcal</span>' +
-                            '<button class="delete-btn" onclick="deleteWorkout(\'' + workout.log_id + '\')">×</button>' +
-                        '</div>' +
-                    '</div>';
+                    html += '<div class="workout-item"><div><div class="workout-name">' + workout.workout_name + '</div>' +
+                        '<div style="font-size: 12px; color: #666;">' + workout.duration_min + ' daqiqa</div></div>' +
+                        '<div style="display: flex; align-items: center;"><span class="workout-calories">-' + workout.calories_burned + ' kcal</span>' +
+                        '<button class="delete-btn" onclick="deleteWorkout(\'' + workout.log_id + '\')">×</button></div></div>';
                 });
                 workoutContainer.innerHTML = html;
             }
         }
         
-        function showDashboard(user, calories, water) {
-            document.getElementById('userName').textContent = user.name || 'User';
-            document.getElementById('profileName').textContent = user.name || 'User';
-            document.getElementById('profileStats').textContent = user.weight + ' kg | ' + (user.goal === 'lose' ? 'Vazn yo\'qotish' : user.goal === 'gain' ? 'Vazn to\'plash' : 'Saqlash');
-            document.getElementById('dailyNorm').textContent = dailyNorm;
-            updateDailyStats(calories);
-            document.getElementById('waterAmount').textContent = water || 0;
-            
-            const waterPercent = Math.min(((water || 0) / 2000) * 100, 100);
-            document.getElementById('waterProgress').style.width = waterPercent + '%';
-        }
-        
-        function updateDailyStats(consumed) {
-            const totalBurned = todayWorkouts.reduce(function(sum, w) {
-                return sum + parseInt(w.calories_burned || 0);
-            }, 0);
-            
-            const netCalories = consumed - totalBurned;
-            const remaining = dailyNorm - netCalories;
-            
-            document.getElementById('consumedCal').textContent = netCalories;
-            document.getElementById('remainingCal').textContent = remaining;
-        }
-        
+        // ================= FOOD & WORKOUT =================
         async function addFood(event) {
             const foodName = document.getElementById('foodName').value;
-            if (!foodName) { 
-                tg.showAlert("Ovqat nomini kiriting!"); 
-                return; 
-            }
+            if (!foodName) { tg.showAlert(currentLang === 'ru' ? 'Введите название еды!' : 'Ovqat nomini kiriting!'); return; }
             
             const btn = event.target;
             btn.disabled = true;
-            btn.textContent = '⏳ Hisoblanmoqda...';
+            btn.textContent = '⏳ ...';
             
             try {
                 const response = await fetch('/api/food/log', {
@@ -1112,47 +1171,25 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ user_id: userId, food_name: foodName })
                 });
-                
                 const data = await response.json();
                 if (data.success) {
-                    todayFood.push({
-                        log_id: Date.now().toString(),
-                        food_name: foodName,
-                        calories: data.calories,
-                        details: data.details,
-                        timestamp: new Date().toISOString()
-                    });
-                    renderTodayFood();
-                    renderFoodTab();
-                    
+                    todayFood.push({ log_id: Date.now().toString(), food_name: foodName, calories: data.calories, details: data.details, timestamp: new Date().toISOString() });
+                    renderTodayFood(); renderFoodTab();
                     const foodResponse = await fetch('/api/food/today/' + userId);
                     const foodData = await foodResponse.json();
-                    const totalCal = foodData.total_calories || 0;
-                    updateDailyStats(totalCal);
-                    
-                    showNotification(foodName + " - " + data.calories + " kcal qo'shildi");
+                    updateDailyStats(foodData.total_calories || 0);
+                    showNotification(foodName + ' - ' + data.calories + ' kcal');
                     document.getElementById('foodName').value = '';
-                    
-                    setTimeout(function() {
-                        switchTab('dashboard');
-                    }, 1000);
+                    setTimeout(function() { switchTab('dashboard'); }, 1000);
                 }
-            } catch (error) {
-                tg.showAlert('Xatolik');
-            } finally {
-                btn.disabled = false;
-                btn.textContent = 'Kaloriyani hisoblash';
-            }
+            } catch (error) { tg.showAlert('Xatolik'); }
+            finally { btn.disabled = false; btn.textContent = translations[currentLang].calculateBtn; }
         }
         
         async function addWorkout() {
             const workoutName = document.getElementById('workoutName').value;
             const duration = document.getElementById('workoutDuration').value;
-            
-            if (!workoutName) { 
-                tg.showAlert("Mashg'ulot nomini kiriting!"); 
-                return; 
-            }
+            if (!workoutName) { tg.showAlert(currentLang === 'ru' ? 'Введите название тренировки!' : 'Mashg\'ulot nomini kiriting!'); return; }
             
             try {
                 const response = await fetch('/api/workout/log', {
@@ -1160,116 +1197,89 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ user_id: userId, workout_name: workoutName, duration_min: duration })
                 });
-                
                 const data = await response.json();
                 if (data.success) {
-                    todayWorkouts.push({
-                        log_id: Date.now().toString(),
-                        workout_name: workoutName,
-                        duration_min: duration,
-                        calories_burned: data.calories_burned,
-                        timestamp: new Date().toISOString()
-                    });
-                    renderTodayWorkouts();
-                    renderFoodTab();
-                    
+                    todayWorkouts.push({ log_id: Date.now().toString(), workout_name: workoutName, duration_min: duration, calories_burned: data.calories_burned, timestamp: new Date().toISOString() });
+                    renderTodayWorkouts(); renderFoodTab();
                     const foodResponse = await fetch('/api/food/today/' + userId);
                     const foodData = await foodResponse.json();
-                    const totalCal = foodData.total_calories || 0;
-                    updateDailyStats(totalCal);
-                    
-                    showNotification(workoutName + " - " + data.calories_burned + " kcal yoqildi");
+                    updateDailyStats(foodData.total_calories || 0);
+                    showNotification(workoutName + ' - ' + data.calories_burned + ' kcal');
                     document.getElementById('workoutName').value = '';
-                    
-                    setTimeout(function() {
-                        switchTab('dashboard');
-                    }, 1000);
+                    setTimeout(function() { switchTab('dashboard'); }, 1000);
                 }
-            } catch (error) {
-                tg.showAlert('Xatolik');
-            }
+            } catch (error) { tg.showAlert('Xatolik'); }
         }
         
         async function addWater(amount) {
             try {
-                await fetch('/api/water/log', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ user_id: userId, amount_ml: amount })
-                });
-                showNotification("+" + amount + "ml suv qo'shildi");
+                await fetch('/api/water/log', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ user_id: userId, amount_ml: amount }) });
+                showNotification('+' + amount + 'ml');
                 await checkUser();
-            } catch (error) {
-                tg.showAlert('Xatolik');
-            }
+            } catch (error) { tg.showAlert('Xatolik'); }
         }
         
         async function deleteFood(logId) {
-            if (confirm('Bu ovqatni o\'chirmoqchimisiz?')) {
-                try {
-                    await fetch('/api/food/' + logId, {
-                        method: 'DELETE'
-                    });
-                    
-                    todayFood = todayFood.filter(function(f) {
-                        return f.log_id !== logId;
-                    });
-                    renderTodayFood();
-                    renderFoodTab();
-                    
-                    const foodResponse = await fetch('/api/food/today/' + userId);
-                    const foodData = await foodResponse.json();
-                    const totalCal = foodData.total_calories || 0;
-                    updateDailyStats(totalCal);
-                    
-                    showNotification("Ovqat o'chirildi");
-                } catch (error) {
-                    tg.showAlert('Xatolik');
-                }
-            }
+            if (!confirm(currentLang === 'ru' ? 'Удалить эту еду?' : 'Bu ovqatni o\'chirmoqchimisiz?')) return;
+            try {
+                await fetch('/api/food/' + logId, { method: 'DELETE' });
+                todayFood = todayFood.filter(function(f) { return f.log_id !== logId; });
+                renderTodayFood(); renderFoodTab();
+                const foodResponse = await fetch('/api/food/today/' + userId);
+                const foodData = await foodResponse.json();
+                updateDailyStats(foodData.total_calories || 0);
+            } catch (error) { tg.showAlert('Xatolik'); }
         }
         
         async function deleteWorkout(logId) {
-            if (confirm('Bu mashg\'ulotni o\'chirmoqchimisiz?')) {
-                try {
-                    await fetch('/api/workout/' + logId, {
-                        method: 'DELETE'
-                    });
-                    
-                    todayWorkouts = todayWorkouts.filter(function(w) {
-                        return w.log_id !== logId;
-                    });
-                    renderTodayWorkouts();
-                    renderFoodTab();
-                    
-                    const foodResponse = await fetch('/api/food/today/' + userId);
-                    const foodData = await foodResponse.json();
-                    const totalCal = foodData.total_calories || 0;
-                    updateDailyStats(totalCal);
-                    
-                    showNotification("Mashg'ulot o'chirildi");
-                } catch (error) {
-                    tg.showAlert('Xatolik');
-                }
-            }
+            if (!confirm(currentLang === 'ru' ? 'Удалить эту тренировку?' : 'Bu mashg\'ulotni o\'chirmoqchimisiz?')) return;
+            try {
+                await fetch('/api/workout/' + logId, { method: 'DELETE' });
+                todayWorkouts = todayWorkouts.filter(function(w) { return w.log_id !== logId; });
+                renderTodayWorkouts(); renderFoodTab();
+                const foodResponse = await fetch('/api/food/today/' + userId);
+                const foodData = await foodResponse.json();
+                updateDailyStats(foodData.total_calories || 0);
+            } catch (error) { tg.showAlert('Xatolik'); }
         }
         
-        async function askAI() {
-            const question = document.getElementById('aiQuestion').value.trim();
-            if (!question) {
-                tg.showAlert("Savol kiriting!");
-                return;
-            }
+        // ================= AI CHAT =================
+        function openChat() {
+            document.getElementById('aiChatScreen').classList.remove('hidden');
+            document.getElementById('chatMessages').scrollTop = document.getElementById('chatMessages').scrollHeight;
+        }
+        
+        function closeChat() {
+            document.getElementById('aiChatScreen').classList.add('hidden');
+        }
+        
+        function openChatWithQuestion(question) {
+            openChat();
+            document.getElementById('chatInput').value = question;
+            sendMessage();
+        }
+        
+        async function sendMessage() {
+            const input = document.getElementById('chatInput');
+            const message = input.value.trim();
+            if (!message) return;
             
-            const responsesDiv = document.getElementById('aiResponses');
-            responsesDiv.innerHTML = '<div style="text-align: center; color: #999; padding: 20px;">⏳ AI javob berayapti...</div>';
+            const messagesDiv = document.getElementById('chatMessages');
+            messagesDiv.innerHTML += '<div class="chat-message user">' + escapeHtml(message) + '</div>';
+            input.value = '';
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+            
+            // Loading indicator
+            const loadingId = 'loading-' + Date.now();
+            messagesDiv.innerHTML += '<div class="chat-message ai" id="' + loadingId + '">⏳ ...</div>';
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
             
             try {
                 const response = await fetch('/api/ai/chat', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ 
-                        message: question,
+                        message: message,
                         user_id: userId,
                         context: {
                             daily_norm: dailyNorm,
@@ -1280,25 +1290,27 @@
                 });
                 
                 const data = await response.json();
+                document.getElementById(loadingId).remove();
+                
                 if (data.success) {
-                    responsesDiv.innerHTML = '<div style="background: var(--bg-light); padding: 16px; border-radius: 12px; margin-bottom: 12px;">' +
-                        '<div style="font-weight: 600; margin-bottom: 8px;">💬 Savol: ' + question + '</div>' +
-                        '<div style="color: #666;">' + data.response + '</div>' +
-                    '</div>' + responsesDiv.innerHTML;
-                    document.getElementById('aiQuestion').value = '';
+                    messagesDiv.innerHTML += '<div class="chat-message ai">' + escapeHtml(data.response) + '</div>';
                 } else {
-                    responsesDiv.innerHTML = '<div style="color: var(--danger); text-align: center;">Xatolik: ' + data.error + '</div>';
+                    messagesDiv.innerHTML += '<div class="chat-message ai" style="color: var(--danger);">❌ ' + (data.error || 'Xatolik') + '</div>';
                 }
             } catch (error) {
-                responsesDiv.innerHTML = '<div style="color: var(--danger); text-align: center;">Xatolik yuz berdi</div>';
+                document.getElementById(loadingId).remove();
+                messagesDiv.innerHTML += '<div class="chat-message ai" style="color: var(--danger);">❌ Xatolik yuz berdi</div>';
             }
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
         }
         
-        function quickAsk(question) {
-            document.getElementById('aiQuestion').value = question;
-            askAI();
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
         }
         
+        // ================= SETTINGS =================
         function loadSettings() {
             if (currentUser) {
                 document.getElementById('editName').value = currentUser.name || '';
@@ -1307,9 +1319,9 @@
                 document.getElementById('editAge').value = currentUser.age || '';
                 document.getElementById('editGoal').value = currentUser.goal || 'maintain';
             }
-            
             const theme = document.body.getAttribute('data-theme');
-            document.getElementById('themeValue').textContent = theme === 'dark' ? 'Qorong\'u' : 'Yorug\'';
+            const t = translations[currentLang];
+            document.getElementById('themeValue').textContent = theme === 'dark' ? (t.dark || 'Qorong\'u') : (t.light || 'Yorug\'');
         }
         
         async function saveProfile() {
@@ -1320,72 +1332,38 @@
                 age: document.getElementById('editAge').value,
                 goal: document.getElementById('editGoal').value
             };
-            
             try {
                 const response = await fetch('/api/user/' + userId, {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(userData)
                 });
-                
                 const data = await response.json();
                 if (data.success) {
                     await checkUser();
-                    tg.showAlert("✅ Profil saqlandi!");
+                    tg.showAlert(currentLang === 'ru' ? '✅ Профиль сохранён!' : '✅ Profil saqlandi!');
                 }
-            } catch (error) {
-                tg.showAlert('Xatolik');
-            }
+            } catch (error) { tg.showAlert('Xatolik'); }
         }
         
         function toggleTheme() {
             const current = document.body.getAttribute('data-theme');
             const newTheme = current === 'dark' ? 'light' : 'dark';
             document.body.setAttribute('data-theme', newTheme);
-            document.getElementById('themeValue').textContent = newTheme === 'dark' ? 'Qorong\'u' : 'Yorug\'';
+            const t = translations[currentLang];
+            document.getElementById('themeValue').textContent = newTheme === 'dark' ? (t.dark || 'Qorong\'u') : (t.light || 'Yorug\'');
             localStorage.setItem('theme', newTheme);
         }
         
-        function changeLanguage() {
-            currentLang = document.getElementById('languageSelect').value;
-            updateLanguage();
-            
-            fetch('/api/user/' + userId, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ language: currentLang })
-            });
-        }
-        
-        function updateLanguage() {
-            const t = translations[currentLang];
-            
-            // Update all elements with data-i18n attribute
-            document.querySelectorAll('[data-i18n]').forEach(function(el) {
-                const key = el.getAttribute('data-i18n');
-                if (t[key]) el.textContent = t[key];
-            });
-            
-            // Update nav labels manually
-            const navLabels = document.querySelectorAll('.nav-label');
-            if (navLabels[0]) navLabels[0].textContent = t.dashboard;
-            if (navLabels[1]) navLabels[1].textContent = t.food;
-            if (navLabels[2]) navLabels[2].textContent = t.ai;
-            if (navLabels[3]) navLabels[3].textContent = t.settings;
-        }
-        
+        // ================= STATISTICS =================
         async function loadStatistics() {
             const days = document.getElementById('periodSelect').value;
-            
             try {
                 const response = await fetch('/api/statistics/' + userId + '?days=' + days);
                 const data = await response.json();
-                
                 const dates = Object.keys(data.daily_calories).reverse();
                 const calories = dates.map(function(date) { return data.daily_calories[date]; });
-                
                 if (chartInstance) chartInstance.destroy();
-                
                 const ctx = document.getElementById('caloriesChart').getContext('2d');
                 chartInstance = new Chart(ctx, {
                     type: 'line',
@@ -1404,17 +1382,13 @@
                         responsive: true,
                         maintainAspectRatio: false,
                         plugins: { legend: { display: false } },
-                        scales: {
-                            y: { beginAtZero: true },
-                            x: { display: dates.length > 0 }
-                        }
+                        scales: { y: { beginAtZero: true }, x: { display: dates.length > 0 } }
                     }
                 });
-            } catch (error) {
-                console.error('Stats error:', error);
-            }
+            } catch (error) { console.error('Stats error:', error); }
         }
         
+        // ================= NOTIFICATION =================
         function showNotification(message) {
             const div = document.createElement('div');
             div.className = 'notification';
@@ -1425,9 +1399,7 @@
         
         // Load saved theme
         const savedTheme = localStorage.getItem('theme');
-        if (savedTheme) {
-            document.body.setAttribute('data-theme', savedTheme);
-        }
+        if (savedTheme) document.body.setAttribute('data-theme', savedTheme);
     </script>
 </body>
 </html>
