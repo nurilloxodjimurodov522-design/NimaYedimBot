@@ -1,13 +1,9 @@
 """
 NimaYedimBot - Professional Kaloriya Tracker
-Features: AI, Multi-language, Water Tracker, Workouts, Reports, Admin Panel
-Gemini 2.0 Flash AI
+Database: PostgreSQL
 """
 
 import os
-import csv
-import json
-import uuid
 import logging
 import threading
 from datetime import datetime, timedelta
@@ -19,6 +15,10 @@ import google.generativeai as genai
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import Application, CommandHandler, ContextTypes
 
+# SQLAlchemy (Database)
+from flask_sqlalchemy import SQLAlchemy
+from sqlalchemy import func
+
 # Logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
@@ -27,8 +27,19 @@ load_dotenv()
 
 # Flask
 app = Flask(__name__)
-app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'secret-key-change-me')
+app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'secret-key')
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024
+
+# PostgreSQL database
+database_url = os.getenv('DATABASE_URL')
+if database_url:
+    app.config['SQLALCHEMY_DATABASE_URI'] = database_url
+    app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+    db = SQLAlchemy(app)
+    logger.info("✅ PostgreSQL connected")
+else:
+    logger.error("❌ DATABASE_URL not set!")
+    raise ValueError("DATABASE_URL required")
 
 # Gemini AI
 GEMINI_API_KEY = os.getenv('GEMINI_API_KEY')
@@ -40,66 +51,73 @@ except:
 
 logger.info("✅ Gemini AI initialized")
 
-# Fayl yo'llari
-DATA_DIR = 'data'
-os.makedirs(DATA_DIR, exist_ok=True)
-
-USERS_FILE = f'{DATA_DIR}/users.csv'
-FOOD_LOG_FILE = f'{DATA_DIR}/food_log.csv'
-WEIGHT_LOG_FILE = f'{DATA_DIR}/weight_log.csv'
-WATER_LOG_FILE = f'{DATA_DIR}/water_log.csv'
-WORKOUT_FILE = f'{DATA_DIR}/workouts.csv'
-BLOCKED_USERS_FILE = f'{DATA_DIR}/blocked_users.txt'
-
-# Admin users (vergul bilan ajratilgan user ID lar)
+# Admin users
 ADMIN_USERS = os.getenv('ADMIN_USERS', '').split(',')
 ADMIN_USERS = [u.strip() for u in ADMIN_USERS if u.strip()]
 
-# ================= CSV FUNKSIYALARI =================
+# ================= DATABASE MODELS =================
 
-def init_files():
-    """Barcha CSV fayllarni yaratadi"""
-    files_config = {
-        USERS_FILE: ['user_id', 'name', 'weight', 'height', 'age', 'gender', 'goal', 'daily_calorie_norm', 'profile_pic', 'language', 'created_at'],
-        FOOD_LOG_FILE: ['log_id', 'user_id', 'food_name', 'calories', 'details', 'photo', 'status', 'timestamp'],
-        WEIGHT_LOG_FILE: ['log_id', 'user_id', 'weight', 'timestamp'],
-        WATER_LOG_FILE: ['log_id', 'user_id', 'amount_ml', 'timestamp'],
-        WORKOUT_FILE: ['log_id', 'user_id', 'workout_name', 'duration_min', 'calories_burned', 'timestamp']
-    }
+class User(db.Model):
+    __tablename__ = 'users'
     
-    for filepath, fieldnames in files_config.items():
-        if not os.path.exists(filepath):
-            with open(filepath, 'w', newline='', encoding='utf-8') as f:
-                writer = csv.DictWriter(f, fieldnames=fieldnames)
-                writer.writeheader()
+    user_id = db.Column(db.String(50), primary_key=True)
+    name = db.Column(db.String(100))
+    weight = db.Column(db.Float)
+    height = db.Column(db.Float)
+    age = db.Column(db.Integer)
+    gender = db.Column(db.String(10))
+    goal = db.Column(db.String(20))
+    daily_calorie_norm = db.Column(db.Integer)
+    profile_pic = db.Column(db.String(200))
+    language = db.Column(db.String(10), default='uz')
+    created_at = db.Column(db.DateTime, default=datetime.now)
+    is_blocked = db.Column(db.Boolean, default=False)
     
-    # Blocked users faylini yaratish
-    if not os.path.exists(BLOCKED_USERS_FILE):
-        with open(BLOCKED_USERS_FILE, 'w') as f:
-            pass
-    
-    logger.info("✅ All CSV files initialized")
+    # Relationships
+    food_logs = db.relationship('FoodLog', backref='user', lazy=True)
+    weight_logs = db.relationship('WeightLog', backref='user', lazy=True)
+    water_logs = db.relationship('WaterLog', backref='user', lazy=True)
+    workouts = db.relationship('Workout', backref='user', lazy=True)
 
-def read_csv(filepath):
-    if not os.path.exists(filepath):
-        return []
-    try:
-        with open(filepath, 'r', encoding='utf-8') as f:
-            return list(csv.DictReader(f))
-    except Exception as e:
-        logger.error(f"Error reading {filepath}: {e}")
-        return []
+class FoodLog(db.Model):
+    __tablename__ = 'food_logs'
+    
+    log_id = db.Column(db.String(50), primary_key=True)
+    user_id = db.Column(db.String(50), db.ForeignKey('users.user_id'), nullable=False)
+    food_name = db.Column(db.String(200))
+    calories = db.Column(db.Integer)
+    details = db.Column(db.Text)
+    photo = db.Column(db.String(200))
+    status = db.Column(db.String(20), default='approved')
+    timestamp = db.Column(db.DateTime, default=datetime.now)
 
-def write_csv(filepath, data, fieldnames):
-    try:
-        with open(filepath, 'w', newline='', encoding='utf-8') as f:
-            writer = csv.DictWriter(f, fieldnames=fieldnames)
-            writer.writeheader()
-            writer.writerows(data)
-        return True
-    except Exception as e:
-        logger.error(f"Error writing {filepath}: {e}")
-        return False
+class WeightLog(db.Model):
+    __tablename__ = 'weight_logs'
+    
+    log_id = db.Column(db.String(50), primary_key=True)
+    user_id = db.Column(db.String(50), db.ForeignKey('users.user_id'), nullable=False)
+    weight = db.Column(db.Float)
+    timestamp = db.Column(db.DateTime, default=datetime.now)
+
+class WaterLog(db.Model):
+    __tablename__ = 'water_logs'
+    
+    log_id = db.Column(db.String(50), primary_key=True)
+    user_id = db.Column(db.String(50), db.ForeignKey('users.user_id'), nullable=False)
+    amount_ml = db.Column(db.Integer)
+    timestamp = db.Column(db.DateTime, default=datetime.now)
+
+class Workout(db.Model):
+    __tablename__ = 'workouts'
+    
+    log_id = db.Column(db.String(50), primary_key=True)
+    user_id = db.Column(db.String(50), db.ForeignKey('users.user_id'), nullable=False)
+    workout_name = db.Column(db.String(200))
+    duration_min = db.Column(db.Integer)
+    calories_burned = db.Column(db.Integer)
+    timestamp = db.Column(db.DateTime, default=datetime.now)
+
+# ================= FUNKSIYALAR =================
 
 def calculate_daily_norm(weight, height, age, gender, goal):
     try:
@@ -113,11 +131,8 @@ def calculate_daily_norm(weight, height, age, gender, goal):
         return 2000
 
 def is_user_blocked(user_id):
-    if not os.path.exists(BLOCKED_USERS_FILE):
-        return False
-    with open(BLOCKED_USERS_FILE, 'r') as f:
-        blocked = f.read().splitlines()
-        return user_id in blocked
+    user = User.query.get(user_id)
+    return user.is_blocked if user else False
 
 def is_admin(user_id):
     return user_id in ADMIN_USERS
@@ -137,24 +152,36 @@ def get_user(user_id):
     if is_user_blocked(user_id):
         return jsonify({'blocked': True}), 403
     
-    users = read_csv(USERS_FILE)
-    user = next((u for u in users if u['user_id'] == user_id), None)
-    
+    user = User.query.get(user_id)
     if not user:
         return jsonify({'exists': False})
     
-    today = datetime.now().strftime('%Y-%m-%d')
-    food_log = read_csv(FOOD_LOG_FILE)
-    today_food = [f for f in food_log if f['user_id'] == user_id and f['timestamp'].startswith(today)]
-    total_calories = sum(int(f['calories']) for f in today_food)
+    today = datetime.now().date()
+    today_food = FoodLog.query.filter(
+        FoodLog.user_id == user_id,
+        func.date(FoodLog.timestamp) == today
+    ).all()
+    total_calories = sum(f.calories for f in today_food)
     
-    water_log = read_csv(WATER_LOG_FILE)
-    today_water = [w for w in water_log if w['user_id'] == user_id and w['timestamp'].startswith(today)]
-    total_water = sum(int(w['amount_ml']) for w in today_water)
+    today_water = WaterLog.query.filter(
+        WaterLog.user_id == user_id,
+        func.date(WaterLog.timestamp) == today
+    ).all()
+    total_water = sum(w.amount_ml for w in today_water)
     
     return jsonify({
         'exists': True,
-        'user': user,
+        'user': {
+            'user_id': user.user_id,
+            'name': user.name,
+            'weight': user.weight,
+            'height': user.height,
+            'age': user.age,
+            'gender': user.gender,
+            'goal': user.goal,
+            'daily_calorie_norm': user.daily_calorie_norm,
+            'language': user.language
+        },
         'today_calories': total_calories,
         'today_water': total_water,
         'food_count': len(today_food)
@@ -163,49 +190,28 @@ def get_user(user_id):
 @app.route('/api/user', methods=['POST'])
 def create_user():
     data = request.json
-    users = read_csv(USERS_FILE)
     
-    if any(u['user_id'] == data.get('user_id') for u in users):
+    if User.query.get(data.get('user_id')):
         return jsonify({'success': False, 'error': 'User exists'})
     
     daily_norm = calculate_daily_norm(data['weight'], data['height'], data['age'], data['gender'], data['goal'])
     
-    users.append({
-        'user_id': data['user_id'],
-        'name': data.get('name', ''),
-        'weight': data['weight'],
-        'height': data['height'],
-        'age': data['age'],
-        'gender': data['gender'],
-        'goal': data['goal'],
-        'daily_calorie_norm': str(daily_norm),
-        'profile_pic': '',
-        'language': data.get('language', 'uz'),
-        'created_at': datetime.now().isoformat()
-    })
+    new_user = User(
+        user_id=data['user_id'],
+        name=data.get('name', ''),
+        weight=data['weight'],
+        height=data['height'],
+        age=data['age'],
+        gender=data['gender'],
+        goal=data['goal'],
+        daily_calorie_norm=daily_norm,
+        language=data.get('language', 'uz')
+    )
     
-    if write_csv(USERS_FILE, users, ['user_id', 'name', 'weight', 'height', 'age', 'gender', 'goal', 'daily_calorie_norm', 'profile_pic', 'language', 'created_at']):
-        return jsonify({'success': True, 'daily_norm': daily_norm})
-    return jsonify({'success': False}), 500
-
-@app.route('/api/user/<user_id>', methods=['PUT'])
-def update_user(user_id):
-    data = request.json
-    users = read_csv(USERS_FILE)
+    db.session.add(new_user)
+    db.session.commit()
     
-    for i, user in enumerate(users):
-        if user['user_id'] == user_id:
-            for key in ['name', 'weight', 'height', 'age', 'gender', 'goal', 'language']:
-                if key in data:
-                    users[i][key] = data[key]
-            
-            if all(k in data for k in ['weight', 'height', 'age', 'gender', 'goal']):
-                users[i]['daily_calorie_norm'] = str(calculate_daily_norm(data['weight'], data['height'], data['age'], data['gender'], data['goal']))
-            
-            if write_csv(USERS_FILE, users, ['user_id', 'name', 'weight', 'height', 'age', 'gender', 'goal', 'daily_calorie_norm', 'profile_pic', 'language', 'created_at']):
-                return jsonify({'success': True})
-    
-    return jsonify({'success': False, 'error': 'User not found'}), 404
+    return jsonify({'success': True, 'daily_norm': daily_norm})
 
 @app.route('/api/food/log', methods=['POST'])
 def log_food():
@@ -224,77 +230,51 @@ def log_food():
         details_prompt = f"{food_name} haqida qisqa ma'lumot (1 gap)."
         details = model.generate_content(details_prompt).text.strip()
         
-        food_log = read_csv(FOOD_LOG_FILE)
-        food_log.append({
-            'log_id': str(uuid.uuid4()),
-            'user_id': user_id,
-            'food_name': food_name,
-            'calories': str(calories),
-            'details': details,
-            'photo': '',
-            'status': 'approved',
-            'timestamp': datetime.now().isoformat()
-        })
+        new_log = FoodLog(
+            log_id=str(os.urandom(24).hex()),
+            user_id=user_id,
+            food_name=food_name,
+            calories=calories,
+            details=details
+        )
         
-        if write_csv(FOOD_LOG_FILE, food_log, ['log_id', 'user_id', 'food_name', 'calories', 'details', 'photo', 'status', 'timestamp']):
-            return jsonify({'success': True, 'calories': calories, 'details': details})
+        db.session.add(new_log)
+        db.session.commit()
+        
+        return jsonify({'success': True, 'calories': calories, 'details': details})
     except Exception as e:
         logger.error(f"Food log error: {e}")
-    
-    return jsonify({'success': False, 'error': str(e)}), 500
-
-@app.route('/api/food/today/<user_id>', methods=['GET'])
-def get_today_food(user_id):
-    today = datetime.now().strftime('%Y-%m-%d')
-    food_log = read_csv(FOOD_LOG_FILE)
-    today_food = [f for f in food_log if f['user_id'] == user_id and f['timestamp'].startswith(today)]
-    total = sum(int(f['calories']) for f in today_food)
-    return jsonify({'food': today_food, 'total_calories': total})
+        return jsonify({'success': False, 'error': str(e)}), 500
 
 @app.route('/api/weight/log', methods=['POST'])
 def log_weight():
     data = request.json
-    weight_log = read_csv(WEIGHT_LOG_FILE)
-    weight_log.append({
-        'log_id': str(uuid.uuid4()),
-        'user_id': data.get('user_id'),
-        'weight': data.get('weight'),
-        'timestamp': datetime.now().isoformat()
-    })
     
-    if write_csv(WEIGHT_LOG_FILE, weight_log, ['log_id', 'user_id', 'weight', 'timestamp']):
-        return jsonify({'success': True})
-    return jsonify({'success': False}), 500
-
-@app.route('/api/weight/history/<user_id>', methods=['GET'])
-def get_weight_history(user_id):
-    weight_log = read_csv(WEIGHT_LOG_FILE)
-    history = [w for w in weight_log if w['user_id'] == user_id]
-    history.sort(key=lambda x: x['timestamp'], reverse=True)
-    return jsonify(history)
+    new_log = WeightLog(
+        log_id=str(os.urandom(24).hex()),
+        user_id=data.get('user_id'),
+        weight=data.get('weight')
+    )
+    
+    db.session.add(new_log)
+    db.session.commit()
+    
+    return jsonify({'success': True})
 
 @app.route('/api/water/log', methods=['POST'])
 def log_water():
     data = request.json
-    water_log = read_csv(WATER_LOG_FILE)
-    water_log.append({
-        'log_id': str(uuid.uuid4()),
-        'user_id': data.get('user_id'),
-        'amount_ml': data.get('amount_ml', 250),
-        'timestamp': datetime.now().isoformat()
-    })
     
-    if write_csv(WATER_LOG_FILE, water_log, ['log_id', 'user_id', 'amount_ml', 'timestamp']):
-        return jsonify({'success': True})
-    return jsonify({'success': False}), 500
-
-@app.route('/api/water/today/<user_id>', methods=['GET'])
-def get_today_water(user_id):
-    today = datetime.now().strftime('%Y-%m-%d')
-    water_log = read_csv(WATER_LOG_FILE)
-    today_water = [w for w in water_log if w['user_id'] == user_id and w['timestamp'].startswith(today)]
-    total = sum(int(w['amount_ml']) for w in today_water)
-    return jsonify({'water': today_water, 'total_ml': total})
+    new_log = WaterLog(
+        log_id=str(os.urandom(24).hex()),
+        user_id=data.get('user_id'),
+        amount_ml=data.get('amount_ml', 250)
+    )
+    
+    db.session.add(new_log)
+    db.session.commit()
+    
+    return jsonify({'success': True})
 
 @app.route('/api/workout/log', methods=['POST'])
 def log_workout():
@@ -310,53 +290,46 @@ def log_workout():
     except:
         calories_burned = 200
     
-    workout_log = read_csv(WORKOUT_FILE)
-    workout_log.append({
-        'log_id': str(uuid.uuid4()),
-        'user_id': user_id,
-        'workout_name': workout_name,
-        'duration_min': str(duration),
-        'calories_burned': str(calories_burned),
-        'timestamp': datetime.now().isoformat()
-    })
+    new_log = Workout(
+        log_id=str(os.urandom(24).hex()),
+        user_id=user_id,
+        workout_name=workout_name,
+        duration_min=duration,
+        calories_burned=calories_burned
+    )
     
-    if write_csv(WORKOUT_FILE, workout_log, ['log_id', 'user_id', 'workout_name', 'duration_min', 'calories_burned', 'timestamp']):
-        return jsonify({'success': True, 'calories_burned': calories_burned})
-    return jsonify({'success': False}), 500
+    db.session.add(new_log)
+    db.session.commit()
+    
+    return jsonify({'success': True, 'calories_burned': calories_burned})
 
 @app.route('/api/recommendations/<user_id>', methods=['GET'])
 def get_recommendations(user_id):
-    users = read_csv(USERS_FILE)
-    user = next((u for u in users if u['user_id'] == user_id), None)
-    
+    user = User.query.get(user_id)
     if not user:
         return jsonify({'success': False, 'error': 'User not found'}), 404
     
-    today = datetime.now().strftime('%Y-%m-%d')
-    food_log = read_csv(FOOD_LOG_FILE)
-    today_food = [f for f in food_log if f['user_id'] == user_id and f['timestamp'].startswith(today)]
-    total_calories = sum(int(f['calories']) for f in today_food)
-    daily_norm = int(user['daily_calorie_norm'])
+    today = datetime.now().date()
+    today_food = FoodLog.query.filter(
+        FoodLog.user_id == user_id,
+        func.date(FoodLog.timestamp) == today
+    ).all()
+    total_calories = sum(f.calories for f in today_food)
+    daily_norm = user.daily_calorie_norm
     
-    weight_log = read_csv(WEIGHT_LOG_FILE)
-    user_weights = [w for w in weight_log if w['user_id'] == user_id]
+    weight_logs = WeightLog.query.filter_by(user_id=user_id).order_by(WeightLog.timestamp.desc()).all()
     weight_trend = "barqaror"
-    if len(user_weights) >= 2:
-        diff = float(user_weights[0]['weight']) - float(user_weights[-1]['weight'])
+    if len(weight_logs) >= 2:
+        diff = weight_logs[0].weight - weight_logs[-1].weight
         if diff > 0.5:
             weight_trend = "vazn tushmoqda"
         elif diff < -0.5:
             weight_trend = "vazn oshmoqda"
     
-    lang = user.get('language', 'uz')
-    # TO'G'RILANDI: Backslash o'rniga o'zgaruvchi ishlatildi
-    if lang == 'uz':
-        lang_name = "o'zbek"
-    else:
-        lang_name = "rus"
+    lang_name = "o'zbek" if user.language == 'uz' else "rus"
     
     prompt = f"""
-    Foydalanuvchi: {user.get('name', 'User')}, vazn: {user['weight']}kg, maqsad: {user['goal']}.
+    Foydalanuvchi: {user.name}, vazn: {user.weight}kg, maqsad: {user.goal}.
     Kunlik norma: {daily_norm} kcal, bugun yegan: {total_calories} kcal.
     Vazn tendensiyasi: {weight_trend}.
     
@@ -379,41 +352,29 @@ def get_recommendations(user_id):
 @app.route('/api/statistics/<user_id>', methods=['GET'])
 def get_statistics(user_id):
     period = request.args.get('period', 'week')
-    
-    if period == 'week':
-        days = 7
-    else:
-        days = 30
+    days = 7 if period == 'week' else 30
     
     end_date = datetime.now()
     start_date = end_date - timedelta(days=days)
     
-    food_log = read_csv(FOOD_LOG_FILE)
-    weight_log = read_csv(WEIGHT_LOG_FILE)
-    workout_log = read_csv(WORKOUT_FILE)
-    
-    user_food = [f for f in food_log if f['user_id'] == user_id and 
-                 start_date <= datetime.fromisoformat(f['timestamp']) <= end_date]
-    user_weight = [w for w in weight_log if w['user_id'] == user_id and 
-                   start_date <= datetime.fromisoformat(w['timestamp']) <= end_date]
-    user_workout = [w for w in workout_log if w['user_id'] == user_id and 
-                    start_date <= datetime.fromisoformat(w['timestamp']) <= end_date]
+    food_logs = FoodLog.query.filter(
+        FoodLog.user_id == user_id,
+        FoodLog.timestamp >= start_date,
+        FoodLog.timestamp <= end_date
+    ).all()
     
     daily_stats = {}
-    for f in user_food:
-        date = f['timestamp'][:10]
-        daily_stats[date] = daily_stats.get(date, 0) + int(f['calories'])
+    for f in food_logs:
+        date = f.timestamp.strftime('%Y-%m-%d')
+        daily_stats[date] = daily_stats.get(date, 0) + f.calories
     
     return jsonify({
-        'total_calories': sum(int(f['calories']) for f in user_food),
-        'total_workouts': len(user_workout),
-        'total_calories_burned': sum(int(w['calories_burned']) for w in user_workout),
-        'weight_changes': user_weight,
+        'total_calories': sum(f.calories for f in food_logs),
         'daily_calories': daily_stats,
         'period_days': days
     })
 
-# ================= ADMIN PANEL API =================
+# ================= ADMIN API =================
 
 @app.route('/api/admin/users', methods=['GET'])
 def admin_get_users():
@@ -423,37 +384,20 @@ def admin_get_users():
     if admin_token != expected_token:
         return jsonify({'error': 'Unauthorized'}), 403
     
-    users = read_csv(USERS_FILE)
+    users = User.query.all()
     return jsonify({
-        'users': users,
+        'users': [{
+            'user_id': u.user_id,
+            'name': u.name,
+            'weight': u.weight,
+            'goal': u.goal,
+            'language': u.language,
+            'daily_calorie_norm': u.daily_calorie_norm,
+            'created_at': u.created_at.isoformat(),
+            'is_blocked': u.is_blocked
+        } for u in users],
         'total': len(users)
     })
-
-@app.route('/api/admin/user/<user_id>', methods=['DELETE'])
-def admin_delete_user(user_id):
-    admin_token = request.headers.get('Authorization', '').replace('Bearer ', '')
-    expected_token = os.getenv('ADMIN_TOKEN', 'admin123')
-    
-    if admin_token != expected_token:
-        return jsonify({'error': 'Unauthorized'}), 403
-    
-    users = [u for u in read_csv(USERS_FILE) if u['user_id'] != user_id]
-    write_csv(USERS_FILE, users, ['user_id', 'name', 'weight', 'height', 'age', 'gender', 'goal', 'daily_calorie_norm', 'profile_pic', 'language', 'created_at'])
-    
-    return jsonify({'success': True})
-
-@app.route('/api/admin/user/<user_id>/block', methods=['POST'])
-def admin_block_user(user_id):
-    admin_token = request.headers.get('Authorization', '').replace('Bearer ', '')
-    expected_token = os.getenv('ADMIN_TOKEN', 'admin123')
-    
-    if admin_token != expected_token:
-        return jsonify({'error': 'Unauthorized'}), 403
-    
-    with open(BLOCKED_USERS_FILE, 'a') as f:
-        f.write(f"{user_id}\n")
-    
-    return jsonify({'success': True})
 
 @app.route('/api/admin/statistics', methods=['GET'])
 def admin_statistics():
@@ -463,19 +407,18 @@ def admin_statistics():
     if admin_token != expected_token:
         return jsonify({'error': 'Unauthorized'}), 403
     
-    users = read_csv(USERS_FILE)
-    food_log = read_csv(FOOD_LOG_FILE)
+    total_users = User.query.count()
+    today = datetime.now().date()
+    active_today = db.session.query(func.count(func.distinct(FoodLog.user_id))).filter(
+        func.date(FoodLog.timestamp) == today
+    ).scalar()
     
-    today = datetime.now().strftime('%Y-%m-%d')
-    active_today = len(set([f['user_id'] for f in food_log if f['timestamp'].startswith(today)]))
-    
-    total_calories = sum(int(f['calories']) for f in food_log)
+    total_calories = db.session.query(func.sum(FoodLog.calories)).scalar() or 0
     
     return jsonify({
-        'total_users': len(users),
+        'total_users': total_users,
         'active_today': active_today,
-        'total_food_logs': len(food_log),
-        'total_calories': total_calories
+        'total_calories': int(total_calories)
     })
 
 # ================= TELEGRAM BOT =================
@@ -492,11 +435,8 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     
     keyboard = [[InlineKeyboardButton("📱 Ilovani Ochish", web_app={"url": WEB_APP_URL})]]
     
-    lang = 'uz'
-    users = read_csv(USERS_FILE)
-    user = next((u for u in users if u['user_id'] == user_id), None)
-    if user:
-        lang = user.get('language', 'uz')
+    user = User.query.get(user_id)
+    lang = user.language if user else 'uz'
     
     if lang == 'ru':
         text = "👋 *Добро пожаловать!*\n\n🍏 Трекер калорий\n✨ Gemini AI\n\nНажмите кнопку ниже:"
@@ -530,91 +470,49 @@ async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     
     await update.message.reply_text(text, parse_mode='Markdown')
 
-# ================= ADMIN TELEGRAM COMMANDS =================
+# ================= ADMIN COMMANDS =================
 
 async def admin_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Admin panel - faqat admin uchun"""
     user_id = str(update.effective_user.id)
     
     if not is_admin(user_id):
         await update.message.reply_text("❌ Siz admin emassiz!")
         return
     
-    users = read_csv(USERS_FILE)
-    food_log = read_csv(FOOD_LOG_FILE)
-    today = datetime.now().strftime('%Y-%m-%d')
-    active_today = len(set([f['user_id'] for f in food_log if f['timestamp'].startswith(today)]))
+    total_users = User.query.count()
+    food_count = FoodLog.query.count()
     
     text = f"""
 👨‍💼 *Admin Panel*
 
 📊 *Statistika:*
-• Jami foydalanuvchilar: {len(users)}
-• Bugun faol: {active_today}
-• Jami ovqatlar: {len(food_log)}
+• Jami foydalanuvchilar: {total_users}
+• Jami ovqatlar: {food_count}
 
 🔗 *Web Admin Panel:*
 {WEB_APP_URL}/admin
-
-📋 *Buyruqlar:*
-/users - Barcha foydalanuvchilar
-/broadcast <xabar> - Hammaga yuborish
-/block <user_id> - Bloklash
-/unblock <user_id> - Blokdan chiqarish
     """
     
     keyboard = [[InlineKeyboardButton("📊 Admin Panel", url=f"{WEB_APP_URL}/admin")]]
     await update.message.reply_text(text, parse_mode='Markdown', reply_markup=InlineKeyboardMarkup(keyboard))
 
 async def users_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Barcha foydalanuvchilar ro'yxati"""
     user_id = str(update.effective_user.id)
     
     if not is_admin(user_id):
         await update.message.reply_text("❌ Siz admin emassiz!")
         return
     
-    users = read_csv(USERS_FILE)
-    
-    if not users:
-        await update.message.reply_text("ℹ️ Hali foydalanuvchilar yo'q")
-        return
+    users = User.query.limit(20).all()
     
     text = "👥 *Foydalanuvchilar:*\n\n"
-    for i, user in enumerate(users[:20], 1):
-        name = user.get('name', 'Noma\'lum')
-        uid = user['user_id']
-        weight = user['weight']
-        goal = user['goal']
-        text += f"{i}. {name} ({uid})\n"
-        text += f"   Vazn: {weight}kg | Maqsad: {goal}\n\n"
-    
-    if len(users) > 20:
-        text += f"\n...va yana {len(users) - 20} ta"
+    for i, user in enumerate(users, 1):
+        text += f"{i}. {user.name} ({user.user_id})\n"
+        text += f"   Vazn: {user.weight}kg | Maqsad: {user.goal}\n\n"
     
     await update.message.reply_text(text, parse_mode='Markdown')
 
 async def block_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Foydalanuvchini bloklash"""
-    user_id = str(update.effective_user.id)
-    
-    if not is_admin(user_id):
-        await update.message.reply_text("❌ Siz admin emassiz!")
-        return
-    
-    if not context.args:
-        await update.message.reply_text("❌ Foydalanuvchi ID sini kiriting!\nMasalan: /block 123456789")
-        return
-    
-    target_user = context.args[0]
-    
-    with open(BLOCKED_USERS_FILE, 'a') as f:
-        f.write(f"{target_user}\n")
-    
-    await update.message.reply_text(f"✅ Foydalanuvchi {target_user} bloklandi!")
-
-async def unblock_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Foydalanuvchini blokdan chiqarish"""
     user_id = str(update.effective_user.id)
     
     if not is_admin(user_id):
@@ -625,21 +523,15 @@ async def unblock_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text("❌ Foydalanuvchi ID sini kiriting!")
         return
     
-    target_user = context.args[0]
-    
-    if os.path.exists(BLOCKED_USERS_FILE):
-        with open(BLOCKED_USERS_FILE, 'r') as f:
-            blocked = f.read().splitlines()
-        
-        blocked = [u for u in blocked if u != target_user]
-        
-        with open(BLOCKED_USERS_FILE, 'w') as f:
-            f.write('\n'.join(blocked))
-    
-    await update.message.reply_text(f"✅ Foydalanuvchi {target_user} blokdan chiqarildi!")
+    target_user = User.query.get(context.args[0])
+    if target_user:
+        target_user.is_blocked = True
+        db.session.commit()
+        await update.message.reply_text(f"✅ Foydalanuvchi {context.args[0]} bloklandi!")
+    else:
+        await update.message.reply_text("❌ Foydalanuvchi topilmadi!")
 
-async def broadcast_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Barcha foydalanuvchilarga xabar yuborish"""
+async def unblock_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = str(update.effective_user.id)
     
     if not is_admin(user_id):
@@ -647,28 +539,44 @@ async def broadcast_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
     
     if not context.args:
-        await update.message.reply_text("❌ Xabar matnini kiriting!\nMasalan: /broadcast Yangi funksiyalar qo'shildi!")
+        await update.message.reply_text("❌ Foydalanuvchi ID sini kiriting!")
+        return
+    
+    target_user = User.query.get(context.args[0])
+    if target_user:
+        target_user.is_blocked = False
+        db.session.commit()
+        await update.message.reply_text(f"✅ Foydalanuvchi {context.args[0]} blokdan chiqarildi!")
+    else:
+        await update.message.reply_text("❌ Foydalanuvchi topilmadi!")
+
+async def broadcast_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    user_id = str(update.effective_user.id)
+    
+    if not is_admin(user_id):
+        await update.message.reply_text("❌ Siz admin emassiz!")
+        return
+    
+    if not context.args:
+        await update.message.reply_text("❌ Xabar matnini kiriting!")
         return
     
     message = ' '.join(context.args)
-    users = read_csv(USERS_FILE)
+    users = User.query.all()
     
     sent_count = 0
-    failed_count = 0
-    
     for user in users:
         try:
             await context.bot.send_message(
-                chat_id=user['user_id'],
+                chat_id=user.user_id,
                 text=f"📢 *Admin xabari:*\n\n{message}",
                 parse_mode='Markdown'
             )
             sent_count += 1
         except Exception as e:
-            logger.error(f"Failed to send to {user['user_id']}: {e}")
-            failed_count += 1
+            logger.error(f"Failed to send to {user.user_id}: {e}")
     
-    await update.message.reply_text(f"✅ {sent_count}/{len(users)} foydalanuvchiga yuborildi!\n❌ Muvaffaqiyatsiz: {failed_count}")
+    await update.message.reply_text(f"✅ {sent_count}/{len(users)} foydalanuvchiga yuborildi!")
 
 # ================= MAIN =================
 
@@ -680,11 +588,14 @@ def run_flask():
 if __name__ == '__main__':
     logger.info("=" * 60)
     logger.info("🍏 NimaYedimBot - Professional Kaloriya Tracker")
+    logger.info("🗄️  Database: PostgreSQL")
     logger.info("✨ Gemini 2.0 Flash AI")
-    logger.info("🌍 Multi-language: Uzbek/Russian")
     logger.info("=" * 60)
     
-    init_files()
+    # Create database tables
+    with app.app_context():
+        db.create_all()
+        logger.info("✅ Database tables created")
     
     flask_thread = threading.Thread(target=run_flask, daemon=True)
     flask_thread.start()
@@ -695,11 +606,8 @@ if __name__ == '__main__':
     try:
         application = Application.builder().token(TELEGRAM_BOT_TOKEN).build()
         
-        # User commands
         application.add_handler(CommandHandler("start", start))
         application.add_handler(CommandHandler("help", help_command))
-        
-        # Admin commands
         application.add_handler(CommandHandler("admin", admin_command))
         application.add_handler(CommandHandler("users", users_command))
         application.add_handler(CommandHandler("block", block_command))
