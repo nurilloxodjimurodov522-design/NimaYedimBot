@@ -472,9 +472,8 @@ if __name__ == '__main__':
         # Botni polling rejimida ishga tushirish
         logger.info("🤖 Bot is running in polling mode...")
         application.run_polling(
-            drop_pending_updates=True,
-            read_timeout=30,
-            connect_timeout=30
+    drop_pending_updates=True
+)
         )
     except Exception as e:
         logger.error(f"Error starting Telegram Bot: {e}")
