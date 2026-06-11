@@ -256,7 +256,7 @@
                     <input type="number" id="weight" placeholder="70" step="0.1">
                 </div>
                 <div class="input-group">
-                    <label>Bo'y / Рост (cm)</label>
+                    <label>Boy / Рост (cm)</label>
                     <input type="number" id="height" placeholder="175">
                 </div>
                 <div class="input-group">
@@ -273,9 +273,9 @@
                 <div class="input-group">
                     <label>Maqsad / Цель</label>
                     <select id="goal">
-                        <option value="lose">Vazn yo'qotish / Похудеть</option>
+                        <option value="lose">Vazn yoqotish / Похудеть</option>
                         <option value="maintain">Saqlash / Поддержать</option>
-                        <option value="gain">Vazn to'plash / Набрать</option>
+                        <option value="gain">Vazn toplash / Набрать</option>
                     </select>
                 </div>
                 <button class="btn btn-primary" onclick="registerUser()">Boshlash / Начать</button>
@@ -285,7 +285,7 @@
         <!-- Dashboard -->
         <div id="dashboard" class="hidden">
             <div class="header">
-                <h1>🔥 Kaloriya Tracker</h1>
+                <h1> Kaloriya Tracker</h1>
                 <span class="badge">✨ Gemini 2.0 Flash</span>
                 <p id="userName">Xush kelibsiz!</p>
             </div>
@@ -322,7 +322,7 @@
             
             <!-- Add Food -->
             <div class="card">
-                <h2 class="card-title">🍔 <span data-i18n="addFood">Ovqat qo'shish</span> <span class="ai-badge">AI</span></h2>
+                <h2 class="card-title"> <span data-i18n="addFood">Ovqat qoshish</span> <span class="ai-badge">AI</span></h2>
                 <div class="input-group">
                     <input type="text" id="foodName" placeholder="Masalan: non, osh, olma...">
                 </div>
@@ -331,23 +331,23 @@
             
             <!-- Workout -->
             <div class="card">
-                <h2 class="card-title">🏃 <span data-i18n="workout">Mashg'ulot</span></h2>
+                <h2 class="card-title">🏃 <span data-i18n="workout">Mashgulot</span></h2>
                 <div class="input-group">
                     <input type="text" id="workoutName" placeholder="Masalan: yugurish, suzish...">
                 </div>
                 <div class="input-group">
                     <input type="number" id="workoutDuration" placeholder="Daqiqa / min" value="30">
                 </div>
-                <button class="btn btn-primary" onclick="addWorkout()"><span data-i18n="logWorkout">Saqlash</span></button>
+                <button class="btn btn-primary" onclick="addWorkout()"><span data-i18n="logWorkout">Saqash</span></button>
             </div>
             
             <!-- Weight -->
             <div class="card">
-                <h2 class="card-title">⚖️ <span data-i18n="weight">Vazn o'lchash</span></h2>
+                <h2 class="card-title">⚖️ <span data-i18n="weight">Vazn olchash</span></h2>
                 <div class="input-group">
                     <input type="number" id="currentWeight" placeholder="Hozirgi vazn (kg)" step="0.1">
                 </div>
-                <button class="btn btn-primary" onclick="logWeight()"><span data-i18n="save">Saqlash</span></button>
+                <button class="btn btn-primary" onclick="logWeight()"><span data-i18n="save">Saqash</span></button>
             </div>
             
             <!-- AI Recommendations -->
@@ -361,8 +361,8 @@
             <div class="card">
                 <h2 class="card-title">📈 <span data-i18n="stats">Statistika</span></h2>
                 <select id="periodSelect" onchange="loadStatistics()" style="width: 100%; padding: 8px; margin-bottom: 12px; border-radius: 8px;">
-                    <option value="week">So'nggi 7 kun</option>
-                    <option value="month">So'nggi 30 kun</option>
+                    <option value="week">Songgi 7 kun</option>
+                    <option value="month">Songgi 30 kun</option>
                 </select>
                 <div class="chart-container">
                     <canvas id="caloriesChart"></canvas>
@@ -393,12 +393,12 @@
                 eaten: "Yegan",
                 remaining: "Qolgan",
                 water: "Suv",
-                addFood: "Ovqat qo'shish",
+                addFood: "Ovqat qoshish",
                 calculate: "Kaloriyani hisoblash",
-                workout: "Mashg'ulot",
-                logWorkout: "Saqlash",
-                weight: "Vazn o'lchash",
-                save: "Saqlash",
+                workout: "Mashgulot",
+                logWorkout: "Saqash",
+                weight: "Vazn olchash",
+                save: "Saqash",
                 aiTips: "AI Tavsiyalar",
                 getTips: "Tavsiya olish",
                 stats: "Statistika",
@@ -450,7 +450,7 @@
         
         function showDashboard(user, calories, water) {
             document.getElementById('dashboard').classList.remove('hidden');
-            document.getElementById('userName').textContent = `${user.name || 'User'}`;
+            document.getElementById('userName').textContent = user.name || 'User';
             document.getElementById('consumedCal').textContent = calories;
             document.getElementById('remainingCal').textContent = dailyNorm - calories;
             document.getElementById('waterAmount').textContent = water || 0;
@@ -483,21 +483,24 @@
                 const data = await response.json();
                 if (data.success) {
                     dailyNorm = data.daily_norm;
-                    tg.showAlert('✅ Profil yaratildi!');
+                    tg.showAlert('Profil yaratildi!');
                     await checkUser();
                 }
             } catch (error) {
-                tg.showAlert('❌ Xatolik');
+                tg.showAlert('Xatolik');
             }
         }
         
         async function addFood(event) {
             const foodName = document.getElementById('foodName').value;
-            if (!foodName) { tg.showAlert('Ovqat nomini kiriting!'); return; }
+            if (!foodName) { 
+                tg.showAlert("Ovqat nomini kiriting!"); 
+                return; 
+            }
             
             const btn = event.target;
             btn.disabled = true;
-            btn.textContent = '⏳...';
+            btn.textContent = '...';
             
             try {
                 const response = await fetch('/api/food/log', {
@@ -508,12 +511,12 @@
                 
                 const data = await response.json();
                 if (data.success) {
-                    showNotification(`✅ ${foodName}\n🔥 ${data.calories} kcal`);
+                    showNotification(foodName + " - " + data.calories + " kcal");
                     document.getElementById('foodName').value = '';
                     await checkUser();
                 }
             } catch (error) {
-                tg.showAlert('❌ Xatolik');
+                tg.showAlert('Xatolik');
             } finally {
                 btn.disabled = false;
                 btn.textContent = translations[currentLang].calculate;
@@ -527,10 +530,10 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ user_id: userId, amount_ml: amount })
                 });
-                showNotification(`💧 +${amount}ml suv qo'shildi`);
+                showNotification("+" + amount + "ml suv qoshildi");
                 await checkUser();
             } catch (error) {
-                tg.showAlert('❌ Xatolik');
+                tg.showAlert('Xatolik');
             }
         }
         
@@ -538,7 +541,10 @@
             const workoutName = document.getElementById('workoutName').value;
             const duration = document.getElementById('workoutDuration').value;
             
-            if (!workoutName) { tg.showAlert('Mashg'ulot nomini kiriting!'); return; }
+            if (!workoutName) { 
+                tg.showAlert("Mashgulot nomini kiriting!"); 
+                return; 
+            }
             
             try {
                 const response = await fetch('/api/workout/log', {
@@ -549,17 +555,20 @@
                 
                 const data = await response.json();
                 if (data.success) {
-                    showNotification(`🏃 ${workoutName}\n🔥 ${data.calories_burned} kcal yoqildi`);
+                    showNotification(workoutName + " - " + data.calories_burned + " kcal yoqildi");
                     document.getElementById('workoutName').value = '';
                 }
             } catch (error) {
-                tg.showAlert('❌ Xatolik');
+                tg.showAlert('Xatolik');
             }
         }
         
         async function logWeight() {
             const weight = document.getElementById('currentWeight').value;
-            if (!weight) { tg.showAlert('Vaznni kiriting!'); return; }
+            if (!weight) { 
+                tg.showAlert("Vaznni kiriting!"); 
+                return; 
+            }
             
             try {
                 const response = await fetch('/api/weight/log', {
@@ -570,27 +579,26 @@
                 
                 const data = await response.json();
                 if (data.success) {
-                    tg.showAlert(`✅ Vazn saqlandi: ${weight} kg`);
+                    tg.showAlert("Vazn saqlandi: " + weight + " kg");
                     document.getElementById('currentWeight').value = '';
                 }
             } catch (error) {
-                tg.showAlert('❌ Xatolik');
+                tg.showAlert('Xatolik');
             }
         }
         
         async function getRecommendations() {
             try {
-                const response = await fetch(`/api/recommendations/${userId}`);
+                const response = await fetch('/api/recommendations/' + userId);
                 const data = await response.json();
                 
                 if (data.success) {
                     const div = document.getElementById('recommendationText');
-                    div.innerHTML = `<div style="background: linear-gradient(135deg, #f093fb, #f5576c); color: white; padding: 16px; border-radius: 8px;">
-                        <strong>💡 AI Tavsiya:</strong><br>${data.recommendation}</div>`;
+                    div.innerHTML = '<div style="background: linear-gradient(135deg, #f093fb, #f5576c); color: white; padding: 16px; border-radius: 8px;"><strong>AI Tavsiya:</strong><br>' + data.recommendation + '</div>';
                     div.style.display = 'block';
                 }
             } catch (error) {
-                tg.showAlert('❌ Xatolik');
+                tg.showAlert('Xatolik');
             }
         }
         
@@ -598,11 +606,11 @@
             const period = document.getElementById('periodSelect').value;
             
             try {
-                const response = await fetch(`/api/statistics/${userId}?period=${period}`);
+                const response = await fetch('/api/statistics/' + userId + '?period=' + period);
                 const data = await response.json();
                 
                 const dates = Object.keys(data.daily_calories).reverse();
-                const calories = dates.map(date => data.daily_calories[date]);
+                const calories = dates.map(function(date) { return data.daily_calories[date]; });
                 
                 if (chartInstance) chartInstance.destroy();
                 
@@ -639,8 +647,7 @@
             currentLang = document.getElementById('languageSelect').value;
             updateLanguage();
             
-            // Save language
-            fetch(`/api/user/${userId}`, {
+            fetch('/api/user/' + userId, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ language: currentLang })
@@ -649,7 +656,7 @@
         
         function updateLanguage() {
             const t = translations[currentLang];
-            document.querySelectorAll('[data-i18n]').forEach(el => {
+            document.querySelectorAll('[data-i18n]').forEach(function(el) {
                 const key = el.getAttribute('data-i18n');
                 if (t[key]) el.textContent = t[key];
             });
@@ -665,11 +672,11 @@
             div.className = 'notification';
             div.textContent = message;
             document.body.appendChild(div);
-            setTimeout(() => div.remove(), 3000);
+            setTimeout(function() { div.remove(); }, 3000);
         }
         
         function showSettings() {
-            tg.showAlert('Sozlamalar tez orada qo\'shiladi!');
+            tg.showAlert("Sozlamalar tez orada qoshiladi!");
         }
     </script>
 </body>
