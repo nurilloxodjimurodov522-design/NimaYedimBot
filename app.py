@@ -1,6 +1,6 @@
 """
 NimaYedimBot - Professional Kaloriya Tracker
-Database: PostgreSQL
+Database: PostgreSQL | AI: Gemini 2.0 Flash
 """
 
 import os
@@ -15,7 +15,7 @@ import google.generativeai as genai
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import Application, CommandHandler, ContextTypes
 
-# SQLAlchemy (Database)
+# SQLAlchemy
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import func
 
@@ -27,10 +27,10 @@ load_dotenv()
 
 # Flask
 app = Flask(__name__)
-app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'secret-key')
+app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'secret-key-change-me')
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024
 
-# PostgreSQL database
+# PostgreSQL
 database_url = os.getenv('DATABASE_URL')
 if database_url:
     app.config['SQLALCHEMY_DATABASE_URI'] = database_url
@@ -73,11 +73,10 @@ class User(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.now)
     is_blocked = db.Column(db.Boolean, default=False)
     
-    # Relationships
-    food_logs = db.relationship('FoodLog', backref='user', lazy=True)
-    weight_logs = db.relationship('WeightLog', backref='user', lazy=True)
-    water_logs = db.relationship('WaterLog', backref='user', lazy=True)
-    workouts = db.relationship('Workout', backref='user', lazy=True)
+    food_logs = db.relationship('FoodLog', backref='user', lazy=True, cascade='all, delete-orphan')
+    weight_logs = db.relationship('WeightLog', backref='user', lazy=True, cascade='all, delete-orphan')
+    water_logs = db.relationship('WaterLog', backref='user', lazy=True, cascade='all, delete-orphan')
+    workouts = db.relationship('Workout', backref='user', lazy=True, cascade='all, delete-orphan')
 
 class FoodLog(db.Model):
     __tablename__ = 'food_logs'
@@ -213,6 +212,29 @@ def create_user():
     
     return jsonify({'success': True, 'daily_norm': daily_norm})
 
+@app.route('/api/user/<user_id>', methods=['PUT'])
+def update_user(user_id):
+    data = request.json
+    user = User.query.get(user_id)
+    
+    if not user:
+        return jsonify({'success': False, 'error': 'User not found'}), 404
+    
+    if 'name' in data: user.name = data['name']
+    if 'weight' in data: user.weight = data['weight']
+    if 'height' in data: user.height = data['height']
+    if 'age' in data: user.age = data['age']
+    if 'gender' in data: user.gender = data['gender']
+    if 'goal' in data: user.goal = data['goal']
+    if 'language' in data: user.language = data['language']
+    
+    if all(k in data for k in ['weight', 'height', 'age', 'gender', 'goal']):
+        user.daily_calorie_norm = calculate_daily_norm(data['weight'], data['height'], data['age'], data['gender'], data['goal'])
+    
+    db.session.commit()
+    
+    return jsonify({'success': True})
+
 @app.route('/api/food/log', methods=['POST'])
 def log_food():
     data = request.json
@@ -246,6 +268,35 @@ def log_food():
         logger.error(f"Food log error: {e}")
         return jsonify({'success': False, 'error': str(e)}), 500
 
+@app.route('/api/food/today/<user_id>', methods=['GET'])
+def get_today_food(user_id):
+    today = datetime.now().date()
+    today_food = FoodLog.query.filter(
+        FoodLog.user_id == user_id,
+        func.date(FoodLog.timestamp) == today
+    ).all()
+    total = sum(f.calories for f in today_food)
+    
+    return jsonify({
+        'food': [{
+            'log_id': f.log_id,
+            'food_name': f.food_name,
+            'calories': f.calories,
+            'details': f.details,
+            'timestamp': f.timestamp.isoformat()
+        } for f in today_food],
+        'total_calories': total
+    })
+
+@app.route('/api/food/<log_id>', methods=['DELETE'])
+def delete_food(log_id):
+    food = FoodLog.query.get(log_id)
+    if food:
+        db.session.delete(food)
+        db.session.commit()
+        return jsonify({'success': True})
+    return jsonify({'success': False, 'error': 'Not found'}), 404
+
 @app.route('/api/weight/log', methods=['POST'])
 def log_weight():
     data = request.json
@@ -261,6 +312,15 @@ def log_weight():
     
     return jsonify({'success': True})
 
+@app.route('/api/weight/history/<user_id>', methods=['GET'])
+def get_weight_history(user_id):
+    weight_logs = WeightLog.query.filter_by(user_id=user_id).order_by(WeightLog.timestamp.desc()).all()
+    return jsonify([{
+        'log_id': w.log_id,
+        'weight': w.weight,
+        'timestamp': w.timestamp.isoformat()
+    } for w in weight_logs])
+
 @app.route('/api/water/log', methods=['POST'])
 def log_water():
     data = request.json
@@ -275,6 +335,24 @@ def log_water():
     db.session.commit()
     
     return jsonify({'success': True})
+
+@app.route('/api/water/today/<user_id>', methods=['GET'])
+def get_today_water(user_id):
+    today = datetime.now().date()
+    today_water = WaterLog.query.filter(
+        WaterLog.user_id == user_id,
+        func.date(WaterLog.timestamp) == today
+    ).all()
+    total = sum(w.amount_ml for w in today_water)
+    
+    return jsonify({
+        'water': [{
+            'log_id': w.log_id,
+            'amount_ml': w.amount_ml,
+            'timestamp': w.timestamp.isoformat()
+        } for w in today_water],
+        'total_ml': total
+    })
 
 @app.route('/api/workout/log', methods=['POST'])
 def log_workout():
@@ -302,6 +380,26 @@ def log_workout():
     db.session.commit()
     
     return jsonify({'success': True, 'calories_burned': calories_burned})
+
+@app.route('/api/workout/history/<user_id>', methods=['GET'])
+def get_workout_history(user_id):
+    workouts = Workout.query.filter_by(user_id=user_id).order_by(Workout.timestamp.desc()).all()
+    return jsonify([{
+        'log_id': w.log_id,
+        'workout_name': w.workout_name,
+        'duration_min': w.duration_min,
+        'calories_burned': w.calories_burned,
+        'timestamp': w.timestamp.isoformat()
+    } for w in workouts])
+
+@app.route('/api/workout/<log_id>', methods=['DELETE'])
+def delete_workout(log_id):
+    workout = Workout.query.get(log_id)
+    if workout:
+        db.session.delete(workout)
+        db.session.commit()
+        return jsonify({'success': True})
+    return jsonify({'success': False, 'error': 'Not found'}), 404
 
 @app.route('/api/recommendations/<user_id>', methods=['GET'])
 def get_recommendations(user_id):
@@ -351,8 +449,7 @@ def get_recommendations(user_id):
 
 @app.route('/api/statistics/<user_id>', methods=['GET'])
 def get_statistics(user_id):
-    period = request.args.get('period', 'week')
-    days = 7 if period == 'week' else 30
+    days = int(request.args.get('days', 7))
     
     end_date = datetime.now()
     start_date = end_date - timedelta(days=days)
@@ -368,11 +465,66 @@ def get_statistics(user_id):
         date = f.timestamp.strftime('%Y-%m-%d')
         daily_stats[date] = daily_stats.get(date, 0) + f.calories
     
+    for i in range(days):
+        date = (end_date - timedelta(days=i)).strftime('%Y-%m-%d')
+        if date not in daily_stats:
+            daily_stats[date] = 0
+    
     return jsonify({
         'total_calories': sum(f.calories for f in food_logs),
         'daily_calories': daily_stats,
         'period_days': days
     })
+
+# ================= AI CHAT =================
+
+@app.route('/api/ai/chat', methods=['POST'])
+def ai_chat():
+    data = request.json
+    message = data.get('message')
+    user_id = data.get('user_id')
+    context = data.get('context', {})
+    
+    user = User.query.get(user_id)
+    if not user:
+        return jsonify({'success': False, 'error': 'User not found'}), 404
+    
+    system_prompt = """Siz professional dietologsiz. Faqat quyidagi mavzularda javob bering:
+- Kaloriya hisoblash va parhez
+- Suv iste'moli va suv rejimi
+- Vazn yo'qotish va vazn to'plash
+- Sog'lom ovqatlanish
+- Mashg'ulot va kaloriya yo'qotish
+- Vitaminlar va minerallar
+
+Agar foydalanuvchi boshqa mavzuda so'rasa, nazokat bilan bu mavzuda gapira olmasligingizni ayting va dietologiya mavzulariga qayting.
+"""
+    
+    prompt = f"""
+Foydalanuvchi ma'lumotlari:
+- Ism: {user.name}
+- Vazn: {user.weight}kg
+- Maqsad: {user.goal}
+- Kunlik norma: {context.get('daily_norm', user.daily_calorie_norm)} kcal
+- Bugun yegan: {context.get('consumed', 0)} kcal
+- Qolgan: {context.get('remaining', 0)} kcal
+
+Foydalanuvchining savoli: {message}
+
+{system_prompt}
+
+Javob qisqa va aniq bo'lsin (2-4 gap).
+"""
+    
+    try:
+        response = model.generate_content(prompt)
+        return jsonify({
+            'success': True,
+            'response': response.text.strip()
+        })
+    except Exception as e:
+        logger.error(f"AI chat error: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
 
 # ================= ADMIN API =================
 
@@ -427,13 +579,16 @@ TELEGRAM_BOT_TOKEN = os.getenv('TELEGRAM_BOT_TOKEN')
 WEB_APP_URL = os.getenv('WEB_APP_URL', 'https://nimayedimbot-pro-production.up.railway.app')
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Bot start handler - foydalanuvchiga xabar yuboradi"""
     user_id = str(update.effective_user.id)
+    
+    logger.info(f"User {user_id} started the bot")
     
     if is_user_blocked(user_id):
         await update.message.reply_text("❌ Siz bloklangan foydalanuvchisiz.")
         return
     
-    keyboard = [[InlineKeyboardButton("📱 Ilovani Ochish", web_app={"url": WEB_APP_URL})]]
+    keyboard = [[InlineKeyboardButton(" Ilovani Ochish", web_app={"url": WEB_APP_URL})]]
     
     user = User.query.get(user_id)
     lang = user.language if user else 'uz'
@@ -444,6 +599,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         text = "👋 *Xush kelibsiz!*\n\n🍏 Kaloriya trekeri\n✨ Gemini AI\n\nTugmani bosing:"
     
     await update.message.reply_text(text, parse_mode='Markdown', reply_markup=InlineKeyboardMarkup(keyboard))
+    logger.info(f"Start message sent to {user_id}")
 
 async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = str(update.effective_user.id)
@@ -476,7 +632,7 @@ async def admin_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = str(update.effective_user.id)
     
     if not is_admin(user_id):
-        await update.message.reply_text("❌ Siz admin emassiz!")
+        await update.message.reply_text(" Siz admin emassiz!")
         return
     
     total_users = User.query.count()
@@ -520,7 +676,7 @@ async def block_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
     
     if not context.args:
-        await update.message.reply_text("❌ Foydalanuvchi ID sini kiriting!")
+        await update.message.reply_text(" Foydalanuvchi ID sini kiriting!")
         return
     
     target_user = User.query.get(context.args[0])
@@ -582,17 +738,16 @@ async def broadcast_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 def run_flask():
     port = int(os.environ.get('PORT', 5000))
-    logger.info(f"🚀 Flask on port {port}")
+    logger.info(f" Flask on port {port}")
     app.run(host='0.0.0.0', port=port, debug=False, use_reloader=False)
 
 if __name__ == '__main__':
     logger.info("=" * 60)
-    logger.info("🍏 NimaYedimBot - Professional Kaloriya Tracker")
+    logger.info(" NimaYedimBot - Professional Kaloriya Tracker")
     logger.info("🗄️  Database: PostgreSQL")
     logger.info("✨ Gemini 2.0 Flash AI")
     logger.info("=" * 60)
     
-    # Create database tables
     with app.app_context():
         db.create_all()
         logger.info("✅ Database tables created")
@@ -601,7 +756,7 @@ if __name__ == '__main__':
     flask_thread.start()
     logger.info("✅ Flask started")
     
-    logger.info("🤖 Starting Telegram Bot...")
+    logger.info(" Starting Telegram Bot...")
     
     try:
         application = Application.builder().token(TELEGRAM_BOT_TOKEN).build()
