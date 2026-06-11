@@ -520,10 +520,10 @@
         </div>
         
         <!-- Dashboard Tab -->
-        <div id="tab-dashboard" class="tab-content">
+        <div id="tab-dashboard" class="tab-content active">
             <div class="header">
                 <h1> Kaloriya Tracker</h1>
-                <span class="badge">✨ Gemini 2.0 Flash</span>
+                <span class="badge">✨ Gemini 3.5 Flash</span>
                 <p id="userName">Xush kelibsiz!</p>
             </div>
             
@@ -756,8 +756,8 @@
                 <h2 class="card-title"> Til</h2>
                 <div class="input-group">
                     <select id="languageSelect" onchange="changeLanguage()">
-                        <option value="uz">🇺🇿 O'zbek</option>
-                        <option value="ru">🇷🇺 Русский</option>
+                        <option value="uz">🇺 O'zbek</option>
+                        <option value="ru">🇷 Русский</option>
                     </select>
                 </div>
             </div>
@@ -779,7 +779,7 @@
                 <p style="color: #666; font-size: 14px;">
                     <strong>Kaloriya Tracker Pro</strong><br>
                     Versiya: 1.0.0<br>
-                    Powered by Gemini 2.0 AI<br><br>
+                    Powered by Gemini 3.5 Flash<br><br>
                     Sog'lom hayot uchun professional kaloriya trackeri.
                 </p>
             </div>
@@ -789,11 +789,11 @@
     <!-- Bottom Navigation -->
     <div class="bottom-nav">
         <div class="nav-item active" onclick="switchTab('dashboard')">
-            <div class="nav-icon"></div>
+            <div class="nav-icon">🏠</div>
             <div class="nav-label">Dashboard</div>
         </div>
         <div class="nav-item" onclick="switchTab('food')">
-            <div class="nav-icon"></div>
+            <div class="nav-icon">🍔</div>
             <div class="nav-label">Ovqat</div>
         </div>
         <div class="nav-item" onclick="switchTab('ai')">
@@ -830,7 +830,50 @@
         let todayFood = [];
         let todayWorkouts = [];
         
+        const translations = {
+            uz: {
+                dashboard: "Dashboard",
+                food: "Ovqat",
+                ai: "AI Dietolog",
+                settings: "Sozlamalar",
+                today: "Bugungi natijalar",
+                eaten: "Yegan",
+                remaining: "Qolgan",
+                water: "Suv",
+                addFood: "Ovqat qo'shish",
+                calculate: "Kaloriyani hisoblash",
+                workout: "Mashg'ulot",
+                logWorkout: "Saqlash",
+                weight: "Vazn o'lchash",
+                save: "Saqlash",
+                aiTips: "AI Dietolog",
+                getTips: "Chatni ochish",
+                stats: "Statistika"
+            },
+            ru: {
+                dashboard: "Главная",
+                food: "Еда",
+                ai: "AI Диетолог",
+                settings: "Настройки",
+                today: "Сегодня",
+                eaten: "Съедено",
+                remaining: "Осталось",
+                water: "Вода",
+                addFood: "Добавить еду",
+                calculate: "Посчитать калории",
+                workout: "Тренировка",
+                logWorkout: "Сохранить",
+                weight: "Вес",
+                save: "Сохранить",
+                aiTips: "AI Диетолог",
+                getTips: "Открыть чат",
+                stats: "Статистика"
+            }
+        };
+        
         window.onload = async function() {
+            // Dashboard birinchi ochilishi
+            switchTab('dashboard');
             await checkUser();
         };
         
@@ -848,6 +891,7 @@
                     document.getElementById('languageSelect').value = currentLang;
                     await loadTodayData();
                     showDashboard(data.user, data.today_calories, data.today_water);
+                    updateLanguage();
                 } else {
                     await autoRegisterUser();
                 }
@@ -1089,7 +1133,6 @@
                     showNotification(foodName + " - " + data.calories + " kcal qo'shildi");
                     document.getElementById('foodName').value = '';
                     
-                    // Switch to dashboard
                     setTimeout(function() {
                         switchTab('dashboard');
                     }, 1000);
@@ -1305,12 +1348,30 @@
         
         function changeLanguage() {
             currentLang = document.getElementById('languageSelect').value;
+            updateLanguage();
             
             fetch('/api/user/' + userId, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ language: currentLang })
             });
+        }
+        
+        function updateLanguage() {
+            const t = translations[currentLang];
+            
+            // Update all elements with data-i18n attribute
+            document.querySelectorAll('[data-i18n]').forEach(function(el) {
+                const key = el.getAttribute('data-i18n');
+                if (t[key]) el.textContent = t[key];
+            });
+            
+            // Update nav labels manually
+            const navLabels = document.querySelectorAll('.nav-label');
+            if (navLabels[0]) navLabels[0].textContent = t.dashboard;
+            if (navLabels[1]) navLabels[1].textContent = t.food;
+            if (navLabels[2]) navLabels[2].textContent = t.ai;
+            if (navLabels[3]) navLabels[3].textContent = t.settings;
         }
         
         async function loadStatistics() {
