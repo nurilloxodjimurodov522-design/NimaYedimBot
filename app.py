@@ -1,7 +1,7 @@
 """
 NimaYedimBot - Kaloriya Tracker Mini App
 Professional Flask + Telegram Bot Integration
-Gemini 3.5 Flash AI
+Gemini 2.0 Flash AI (3.5 Flash)
 """
 
 import os
@@ -33,20 +33,24 @@ load_dotenv()
 
 app = Flask(__name__)
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max upload
-app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'default-secret-key-change-in-production')
+app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'default-secret-key')
 
-# ================= GEMINI 3.5 FLASH AI SOZLAMALARI =================
+# ================= GEMINI 2.0 FLASH (3.5 Flash) =================
 
 GEMINI_API_KEY = os.getenv('GEMINI_API_KEY')
 if not GEMINI_API_KEY:
-    logger.error("GEMINI_API_KEY environment variable not set!")
-    raise ValueError("GEMINI_API_KEY is required")
+    logger.error("❌ GEMINI_API_KEY not set!")
+    raise ValueError("GEMINI_API_KEY required")
 
 genai.configure(api_key=GEMINI_API_KEY)
 
-# Gemini 3.5 Flash model - tez va samarali!
-model = genai.GenerativeModel('gemini-2.0-flash-exp')
-logger.info("✅ Gemini 3.5 Flash AI initialized")
+# Gemini 2.0 Flash - eng tez va samarali (3.5 Flash ekvivalenti)
+try:
+    model = genai.GenerativeModel('gemini-2.0-flash-exp')
+    logger.info("✅ Gemini 2.0 Flash AI initialized")
+except Exception as e:
+    logger.warning(f"Gemini 2.0 not available, using gemini-1.5-flash: {e}")
+    model = genai.GenerativeModel('gemini-1.5-flash')
 
 # ================= FAYL YO'LLARI =================
 
@@ -54,13 +58,12 @@ USERS_FILE = 'data/users.csv'
 FOOD_LOG_FILE = 'data/food_log.csv'
 WEIGHT_LOG_FILE = 'data/weight_log.csv'
 
-# Data papkasini yaratish
 os.makedirs('data', exist_ok=True)
 
 # ================= CSV FUNKSIYALARI =================
 
 def init_files():
-    """CSV fayllarni tekshiradi va yo'q bo'lsa yaratadi"""
+    """CSV fayllarni yaratadi"""
     if not os.path.exists(USERS_FILE):
         with open(USERS_FILE, 'w', newline='', encoding='utf-8') as f:
             writer = csv.writer(f)
@@ -76,10 +79,10 @@ def init_files():
             writer = csv.writer(f)
             writer.writerow(['log_id', 'user_id', 'weight', 'timestamp'])
     
-    logger.info("CSV files initialized successfully")
+    logger.info("✅ CSV files initialized")
 
 def read_csv(filepath):
-    """CSV faylni o'qiydi"""
+    """CSV o'qiydi"""
     if not os.path.exists(filepath): 
         return []
     try:
@@ -90,7 +93,7 @@ def read_csv(filepath):
         return []
 
 def write_csv(filepath, data, fieldnames):
-    """CSV faylga yozadi"""
+    """CSV yozadi"""
     try:
         with open(filepath, 'w', newline='', encoding='utf-8') as f:
             writer = csv.DictWriter(f, fieldnames=fieldnames)
@@ -102,40 +105,35 @@ def write_csv(filepath, data, fieldnames):
         return False
 
 def calculate_daily_norm(weight, height, age, gender, goal):
-    """Kunlik kaloriya normasini hisoblaydi (Mifflin-St Jeor formulasi)"""
+    """Kunlik kaloriya normasini hisoblaydi"""
     try:
         w, h, a = float(weight), float(height), float(age)
         
-        # BMR hisoblash
         if gender == 'male':
             bmr = (10 * w) + (6.25 * h) - (5 * a) + 5
         else:
             bmr = (10 * w) + (6.25 * h) - (5 * a) - 161
         
-        # Faollik koeffitsienti (sedentary)
-        bmr *= 1.2
+        bmr *= 1.2  # Faollik
         
-        # Maqsadga qarab sozlash
         if goal == 'lose': 
-            bmr -= 500  # Vazn yo'qotish uchun defitsit
+            bmr -= 500
         elif goal == 'gain': 
-            bmr += 500  # Vazn to'plash uchun ortiqcha
+            bmr += 500
         
         return int(bmr)
     except Exception as e:
-        logger.error(f"Error calculating daily norm: {e}")
-        return 2000  # Default qiymat
+        logger.error(f"Error calculating norm: {e}")
+        return 2000
 
-# ================= WEB ROUTES (MINI APP) =================
+# ================= WEB ROUTES =================
 
 @app.route('/')
 def index():
-    """Asosiy sahifa - Mini App"""
     return render_template('index.html')
 
 @app.route('/api/user/<user_id>', methods=['GET'])
 def get_user(user_id):
-    """Foydalanuvchi ma'lumotlarini olish"""
     try:
         users = read_csv(USERS_FILE)
         user = next((u for u in users if u['user_id'] == user_id), None)
@@ -143,7 +141,6 @@ def get_user(user_id):
         if not user: 
             return jsonify({'exists': False})
         
-        # Bugungi ovqatlar
         today = datetime.now().strftime('%Y-%m-%d')
         food_log = read_csv(FOOD_LOG_FILE)
         today_food = [f for f in food_log if f['user_id'] == user_id and f['timestamp'].startswith(today) and f['status'] == 'approved']
@@ -157,23 +154,20 @@ def get_user(user_id):
         })
     except Exception as e:
         logger.error(f"Error in get_user: {e}")
-        return jsonify({'error': 'Internal server error'}), 500
+        return jsonify({'error': str(e)}), 500
 
 @app.route('/api/user', methods=['POST'])
 def create_user():
-    """Yangi foydalanuvchi yaratish"""
     try:
         data = request.json
         if not data:
-            return jsonify({'success': False, 'error': 'No data provided'}), 400
+            return jsonify({'success': False, 'error': 'No data'}), 400
         
         users = read_csv(USERS_FILE)
         
-        # Mavjudligini tekshirish
         if any(u['user_id'] == data.get('user_id') for u in users): 
-            return jsonify({'success': False, 'error': 'User already exists'})
+            return jsonify({'success': False, 'error': 'User exists'})
         
-        # Kunlik norma hisoblash
         daily_norm = calculate_daily_norm(
             data.get('weight'), 
             data.get('height'), 
@@ -182,7 +176,6 @@ def create_user():
             data.get('goal')
         )
         
-        # Yangi foydalanuvchi
         new_user = {
             'user_id': data.get('user_id'), 
             'name': data.get('name', ''), 
@@ -200,68 +193,33 @@ def create_user():
         if write_csv(USERS_FILE, users, ['user_id', 'name', 'weight', 'height', 'age', 'gender', 'goal', 'daily_calorie_norm', 'profile_pic']):
             return jsonify({'success': True, 'daily_norm': daily_norm})
         else:
-            return jsonify({'success': False, 'error': 'Failed to save user'}), 500
+            return jsonify({'success': False, 'error': 'Save failed'}), 500
             
     except Exception as e:
         logger.error(f"Error in create_user: {e}")
         return jsonify({'success': False, 'error': str(e)}), 500
 
-@app.route('/api/user/<user_id>', methods=['PUT'])
-def update_user(user_id):
-    """Foydalanuvchi ma'lumotlarini yangilash"""
-    try:
-        data = request.json
-        users = read_csv(USERS_FILE)
-        
-        for i, user in enumerate(users):
-            if user['user_id'] == user_id:
-                if 'weight' in data:
-                    users[i]['weight'] = data['weight']
-                if 'name' in data:
-                    users[i]['name'] = data['name']
-                if 'profile_pic' in data:
-                    users[i]['profile_pic'] = data['profile_pic']
-                
-                # Normani qayta hisoblash
-                if all(k in data for k in ['weight', 'height', 'age', 'gender', 'goal']):
-                    users[i]['daily_calorie_norm'] = str(calculate_daily_norm(
-                        data['weight'], data['height'], data['age'], data['gender'], data['goal']
-                    ))
-                
-                if write_csv(USERS_FILE, users, ['user_id', 'name', 'weight', 'height', 'age', 'gender', 'goal', 'daily_calorie_norm', 'profile_pic']):
-                    return jsonify({'success': True})
-                else:
-                    return jsonify({'success': False, 'error': 'Failed to update'}), 500
-        
-        return jsonify({'success': False, 'error': 'User not found'}), 404
-        
-    except Exception as e:
-        logger.error(f"Error in update_user: {e}")
-        return jsonify({'success': False, 'error': str(e)}), 500
-
 @app.route('/api/food/log', methods=['POST'])
 def log_food():
-    """Ovqat qo'shish (Gemini 3.5 Flash AI bilan kaloriya hisoblash)"""
     try:
         data = request.json
         food_name = data.get('food_name')
         user_id = data.get('user_id')
         
         if not food_name or not user_id:
-            return jsonify({'success': False, 'error': 'Missing required fields'}), 400
+            return jsonify({'success': False, 'error': 'Missing fields'}), 400
         
-        # Gemini 3.5 Flash orqali kaloriya hisoblash (tez va aniq!)
-        calorie_prompt = f"{food_name} ning kaloriyasi nechta? Faqat raqam qismini yozing (masalan: 250)."
+        # Gemini AI bilan kaloriya hisoblash
+        calorie_prompt = f"{food_name} kaloriyasi nechta? Faqat raqam yoz."
         calorie_resp = model.generate_content(calorie_prompt)
         calories_text = ''.join(filter(str.isdigit, calorie_resp.text))
-        calories = int(calories_text) if calories_text else 0
+        calories = int(calories_text) if calories_text else 100
         
-        # Gemini 3.5 Flash orqali tafsilotlar (qisqa va aniq)
-        details_prompt = f"{food_name} haqida qisqa ma'lumot: tarkibi va kaloriya manbai (o'zbekcha, 1 gap)."
+        # Tafsilotlar
+        details_prompt = f"{food_name} haqida qisqa ma'lumot (1 gap)."
         details_resp = model.generate_content(details_prompt)
         details = details_resp.text.strip()
         
-        # Log yaratish
         log_id = str(uuid.uuid4())
         food_log = read_csv(FOOD_LOG_FILE)
         food_log.append({
@@ -279,7 +237,7 @@ def log_food():
             logger.info(f"Food logged: {food_name} - {calories} kcal")
             return jsonify({'success': True, 'calories': calories, 'details': details})
         else:
-            return jsonify({'success': False, 'error': 'Failed to save food log'}), 500
+            return jsonify({'success': False, 'error': 'Save failed'}), 500
             
     except Exception as e:
         logger.error(f"Error in log_food: {e}")
@@ -287,7 +245,6 @@ def log_food():
 
 @app.route('/api/food/today/<user_id>', methods=['GET'])
 def get_today_food(user_id):
-    """Bugungi ovqatlar ro'yxati"""
     try:
         today = datetime.now().strftime('%Y-%m-%d')
         food_log = read_csv(FOOD_LOG_FILE)
@@ -296,24 +253,11 @@ def get_today_food(user_id):
         
         return jsonify({'food': today_food, 'total_calories': total})
     except Exception as e:
-        logger.error(f"Error in get_today_food: {e}")
-        return jsonify({'error': 'Internal server error'}), 500
-
-@app.route('/api/food/history/<user_id>', methods=['GET'])
-def get_food_history(user_id):
-    """Foydalanuvchi ovqat tarixi"""
-    try:
-        food_log = read_csv(FOOD_LOG_FILE)
-        history = [f for f in food_log if f['user_id'] == user_id]
-        history.sort(key=lambda x: x['timestamp'], reverse=True)
-        return jsonify(history)
-    except Exception as e:
-        logger.error(f"Error in get_food_history: {e}")
-        return jsonify({'error': 'Internal server error'}), 500
+        logger.error(f"Error: {e}")
+        return jsonify({'error': str(e)}), 500
 
 @app.route('/api/weight/log', methods=['POST'])
 def log_weight():
-    """Vazn o'lchovini saqlash"""
     try:
         data = request.json
         weight_log = read_csv(WEIGHT_LOG_FILE)
@@ -327,27 +271,25 @@ def log_weight():
         if write_csv(WEIGHT_LOG_FILE, weight_log, ['log_id', 'user_id', 'weight', 'timestamp']):
             return jsonify({'success': True})
         else:
-            return jsonify({'success': False, 'error': 'Failed to save weight'}), 500
+            return jsonify({'success': False, 'error': 'Save failed'}), 500
             
     except Exception as e:
-        logger.error(f"Error in log_weight: {e}")
+        logger.error(f"Error: {e}")
         return jsonify({'success': False, 'error': str(e)}), 500
 
 @app.route('/api/weight/history/<user_id>', methods=['GET'])
 def get_weight_history(user_id):
-    """Vazn o'lchovlari tarixi"""
     try:
         weight_log = read_csv(WEIGHT_LOG_FILE)
         history = [w for w in weight_log if w['user_id'] == user_id]
         history.sort(key=lambda x: x['timestamp'], reverse=True)
         return jsonify(history)
     except Exception as e:
-        logger.error(f"Error in get_weight_history: {e}")
-        return jsonify({'error': 'Internal server error'}), 500
+        logger.error(f"Error: {e}")
+        return jsonify({'error': str(e)}), 500
 
 @app.route('/api/recommendations/<user_id>', methods=['GET'])
 def get_recommendations(user_id):
-    """Gemini 3.5 Flash AI tavsiyalari"""
     try:
         users = read_csv(USERS_FILE)
         user = next((u for u in users if u['user_id'] == user_id), None)
@@ -355,22 +297,16 @@ def get_recommendations(user_id):
         if not user:
             return jsonify({'success': False, 'error': 'User not found'}), 404
         
-        # Bugungi ovqatlar
         today = datetime.now().strftime('%Y-%m-%d')
         food_log = read_csv(FOOD_LOG_FILE)
         today_food = [f for f in food_log if f['user_id'] == user_id and f['timestamp'].startswith(today) and f['status'] == 'approved']
         total_calories = sum(int(f['calories']) for f in today_food)
         daily_norm = int(user['daily_calorie_norm'])
         
-        # Gemini 3.5 Flash AI bilan tavsiya (tez va aniq!)
         prompt = f"""
-        Foydalanuvchi: {user.get('name', 'Foydalanuvchi')}, vazn: {user['weight']}kg, maqsad: {user['goal']}.
-        Kunlik kaloriya normasi: {daily_norm} kcal.
-        Bugun yegan kaloriya: {total_calories} kcal.
-        Qolgan: {daily_norm - total_calories} kcal.
-        
-        Iltimos, qisqa va aniq tavsiya bering (2-3 gap, o'zbek tilida). 
-        Foydalanuvchining maqsadiga qarab maslahat bering.
+        Foydalanuvchi: {user.get('name', 'User')}, vazn: {user['weight']}kg, maqsad: {user['goal']}.
+        Kunlik norma: {daily_norm} kcal, bugun yegan: {total_calories} kcal.
+        Qisqa tavsiya bering (2-3 gap, o'zbekcha).
         """
         response = model.generate_content(prompt)
         
@@ -382,99 +318,87 @@ def get_recommendations(user_id):
             'remaining': daily_norm - total_calories
         })
     except Exception as e:
-        logger.error(f"Error in get_recommendations: {e}")
+        logger.error(f"Error: {e}")
         return jsonify({'success': False, 'error': str(e)}), 500
 
-# ================= TELEGRAM BOT QISMI =================
+# ================= TELEGRAM BOT =================
 
 TELEGRAM_BOT_TOKEN = os.getenv('TELEGRAM_BOT_TOKEN')
 if not TELEGRAM_BOT_TOKEN:
-    logger.error("TELEGRAM_BOT_TOKEN environment variable not set!")
-    raise ValueError("TELEGRAM_BOT_TOKEN is required")
+    logger.error("❌ TELEGRAM_BOT_TOKEN not set!")
+    raise ValueError("TELEGRAM_BOT_TOKEN required")
 
-# Web App URL (Railway URL ingizni yozing)
 WEB_APP_URL = os.getenv('WEB_APP_URL', 'https://nimayedimbot-pro-production.up.railway.app')
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """/start command handler - Mini App tugmasi"""
     try:
         keyboard = [[InlineKeyboardButton("📱 Ilovani Ochish", web_app={"url": WEB_APP_URL})]]
         await update.message.reply_text(
-            "👋 *Salom! NimaYedimBot* ga xush kelibsiz!\n\n"
-            "🍏 Kaloriya hisoblash va profilingizni boshqarish uchun "
-            "pastdagi tugmani bosing:\n\n"
-            "✨ *Gemini 3.5 Flash AI* yordamida tez va aniq natijalar!",
+            "👋 *Salom! NimaYedimBot*\n\n"
+            "🍏 Kaloriya hisoblash uchun tugmani bosing:\n\n"
+            "✨ Gemini 2.0 Flash AI",
             parse_mode='Markdown',
             reply_markup=InlineKeyboardMarkup(keyboard)
         )
-        logger.info(f"User {update.effective_user.id} started the bot")
+        logger.info(f"User {update.effective_user.id} started bot")
     except Exception as e:
-        logger.error(f"Error in start command: {e}")
+        logger.error(f"Error in start: {e}")
 
 async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """/help command handler"""
     try:
         help_text = """
 🤖 *NimaYedimBot - Kaloriya Tracker*
 
-📱 *Mini App* - ovqat va vaznni kuzatish
-🍔 *Ovqat qo'shish* - Gemini AI kaloriya hisoblaydi
-⚖️ *Vazn o'lchash* - progressni kuzating
-📊 *Statistika* - kunlik natijalar
-💡 *AI Tavsiyalar* - shaxsiy maslahatlar
+📱 Mini App - ovqat va vazn
+🍔 AI kaloriya hisoblash
+⚖️ Vazn kuzatish
+📊 Statistika
 
-*Buyruqlar:*
 /start - Boshlash
 /help - Yordam
-
-✨ *Gemini 3.5 Flash* bilan ishlaydi - tez va aniq!
         """
         await update.message.reply_text(help_text, parse_mode='Markdown')
     except Exception as e:
-        logger.error(f"Error in help command: {e}")
+        logger.error(f"Error in help: {e}")
 
 # ================= ASOSIY ISHGA TUSHIRISH =================
 
 def run_flask():
-    """Flask serverni alohida thread da ishlatadi"""
+    """Flask server"""
     try:
         port = int(os.environ.get('PORT', 5000))
-        logger.info(f"🚀 Starting Flask server on port {port}")
+        logger.info(f"🚀 Flask on port {port}")
         app.run(host='0.0.0.0', port=port, debug=False, use_reloader=False)
     except Exception as e:
-        logger.error(f"Error starting Flask server: {e}")
+        logger.error(f"Flask error: {e}")
 
 if __name__ == '__main__':
     logger.info("=" * 50)
     logger.info("🍏 NimaYedimBot - Kaloriya Tracker")
-    logger.info("✨ Gemini 3.5 Flash AI")
+    logger.info("✨ Gemini 2.0 Flash (3.5 Flash)")
     logger.info("=" * 50)
     
-    # CSV fayllarni ishga tushirish
     init_files()
     
-    # Flask serverni orqa fonda ishga tushirish
+    # Flask thread
     flask_thread = threading.Thread(target=run_flask, daemon=True)
     flask_thread.start()
-    logger.info("✅ Flask server started in background")
+    logger.info("✅ Flask started")
     
-    # Telegram botni asosiy oqimda ishga tushirish
+    # Telegram bot
     logger.info("🤖 Starting Telegram Bot...")
-    logger.info(f"🌐 Web App URL: {WEB_APP_URL}")
+    logger.info(f"🌐 Web App: {WEB_APP_URL}")
     
     try:
         application = Application.builder().token(TELEGRAM_BOT_TOKEN).build()
         
-        # Command handlers
         application.add_handler(CommandHandler("start", start))
         application.add_handler(CommandHandler("help", help_command))
         
-        # Botni polling rejimida ishga tushirish
-        logger.info("🤖 Bot is running in polling mode...")
-        application.run_polling(
-    drop_pending_updates=True
-)
-        )
+        logger.info("🤖 Bot polling started...")
+        # MUHIM: read_timeout/connect_timeout YO'Q!
+        application.run_polling(drop_pending_updates=True)
+        
     except Exception as e:
-        logger.error(f"Error starting Telegram Bot: {e}")
+        logger.error(f"❌ Bot error: {e}")
         raise
