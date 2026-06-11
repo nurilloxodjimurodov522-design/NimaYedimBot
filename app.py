@@ -207,12 +207,10 @@ def log_food():
         return jsonify({'success': False, 'error': 'Missing fields'}), 400
     
     try:
-        # AI kaloriya
         calorie_prompt = f"{food_name} kaloriyasi nechta? Faqat raqam yoz."
         calorie_resp = model.generate_content(calorie_prompt)
         calories = int(''.join(filter(str.isdigit, calorie_resp.text)) or '100')
         
-        # AI tafsilot
         details_prompt = f"{food_name} haqida qisqa ma'lumot (1 gap)."
         details = model.generate_content(details_prompt).text.strip()
         
@@ -302,7 +300,6 @@ def log_workout():
     duration = data.get('duration_min', 30)
     user_id = data.get('user_id')
     
-    # AI kaloriya hisoblash
     try:
         calories_prompt = f"{workout_name} {duration} daqiqa davomida nechta kaloriya yoqiladi? Faqat raqam."
         calories_resp = model.generate_content(calories_prompt)
@@ -345,7 +342,6 @@ def get_recommendations(user_id):
     total_calories = sum(int(f['calories']) for f in today_food)
     daily_norm = int(user['daily_calorie_norm'])
     
-    # Vazn ma'lumotlari
     weight_log = read_csv(WEIGHT_LOG_FILE)
     user_weights = [w for w in weight_log if w['user_id'] == user_id]
     weight_trend = "barqaror"
@@ -357,13 +353,14 @@ def get_recommendations(user_id):
             weight_trend = "vazn oshmoqda"
     
     lang = user.get('language', 'uz')
+    lang_name = "o'zbek" if lang == 'uz' else "rus"
     
     prompt = f"""
     Foydalanuvchi: {user.get('name', 'User')}, vazn: {user['weight']}kg, maqsad: {user['goal']}.
     Kunlik norma: {daily_norm} kcal, bugun yegan: {total_calories} kcal.
     Vazn tendensiyasi: {weight_trend}.
     
-    Tavsiya bering (2-3 gap, {'o\'zbek' if lang == 'uz' else 'rus'} tilida).
+    Tavsiya bering (2-3 gap, {lang_name} tilida).
     """
     
     try:
@@ -381,8 +378,7 @@ def get_recommendations(user_id):
 
 @app.route('/api/statistics/<user_id>', methods=['GET'])
 def get_statistics(user_id):
-    """Haftalik/oylik statistika"""
-    period = request.args.get('period', 'week')  # week, month
+    period = request.args.get('period', 'week')
     
     if period == 'week':
         days = 7
@@ -396,7 +392,6 @@ def get_statistics(user_id):
     weight_log = read_csv(WEIGHT_LOG_FILE)
     workout_log = read_csv(WORKOUT_FILE)
     
-    # Filter by period
     user_food = [f for f in food_log if f['user_id'] == user_id and 
                  start_date <= datetime.fromisoformat(f['timestamp']) <= end_date]
     user_weight = [w for w in weight_log if w['user_id'] == user_id and 
@@ -404,7 +399,6 @@ def get_statistics(user_id):
     user_workout = [w for w in workout_log if w['user_id'] == user_id and 
                     start_date <= datetime.fromisoformat(w['timestamp']) <= end_date]
     
-    # Kunlik statistika
     daily_stats = {}
     for f in user_food:
         date = f['timestamp'][:10]
@@ -423,7 +417,10 @@ def get_statistics(user_id):
 
 @app.route('/api/admin/users', methods=['GET'])
 def admin_get_users():
-    if not verify_admin():
+    admin_token = request.headers.get('Authorization', '').replace('Bearer ', '')
+    expected_token = os.getenv('ADMIN_TOKEN', 'admin123')
+    
+    if admin_token != expected_token:
         return jsonify({'error': 'Unauthorized'}), 403
     
     users = read_csv(USERS_FILE)
@@ -434,7 +431,10 @@ def admin_get_users():
 
 @app.route('/api/admin/user/<user_id>', methods=['DELETE'])
 def admin_delete_user(user_id):
-    if not verify_admin():
+    admin_token = request.headers.get('Authorization', '').replace('Bearer ', '')
+    expected_token = os.getenv('ADMIN_TOKEN', 'admin123')
+    
+    if admin_token != expected_token:
         return jsonify({'error': 'Unauthorized'}), 403
     
     users = [u for u in read_csv(USERS_FILE) if u['user_id'] != user_id]
@@ -444,7 +444,10 @@ def admin_delete_user(user_id):
 
 @app.route('/api/admin/user/<user_id>/block', methods=['POST'])
 def admin_block_user(user_id):
-    if not verify_admin():
+    admin_token = request.headers.get('Authorization', '').replace('Bearer ', '')
+    expected_token = os.getenv('ADMIN_TOKEN', 'admin123')
+    
+    if admin_token != expected_token:
         return jsonify({'error': 'Unauthorized'}), 403
     
     with open(BLOCKED_USERS_FILE, 'a') as f:
@@ -454,7 +457,10 @@ def admin_block_user(user_id):
 
 @app.route('/api/admin/statistics', methods=['GET'])
 def admin_statistics():
-    if not verify_admin():
+    admin_token = request.headers.get('Authorization', '').replace('Bearer ', '')
+    expected_token = os.getenv('ADMIN_TOKEN', 'admin123')
+    
+    if admin_token != expected_token:
         return jsonify({'error': 'Unauthorized'}), 403
     
     users = read_csv(USERS_FILE)
@@ -472,12 +478,6 @@ def admin_statistics():
         'total_calories': total_calories
     })
 
-def verify_admin():
-    """Admin tekshirish (session yoki token orqali)"""
-    # Hozircha oddiy tekshirish
-    admin_token = os.getenv('ADMIN_TOKEN')
-    return True  # Keyinchalik to'liq autentifikatsiya qo'shiladi
-
 # ================= TELEGRAM BOT =================
 
 TELEGRAM_BOT_TOKEN = os.getenv('TELEGRAM_BOT_TOKEN')
@@ -487,12 +487,12 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = str(update.effective_user.id)
     
     if is_user_blocked(user_id):
-        await update.message.reply_text("❌ Siz bloklangan foydalanuvchisiz.")
+        await update.message.reply_text("Siz bloklangan foydalanuvchisiz.")
         return
     
     keyboard = [[InlineKeyboardButton("📱 Ilovani Ochish", web_app={"url": WEB_APP_URL})]]
     
-    lang = 'uz'  # Default
+    lang = 'uz'
     users = read_csv(USERS_FILE)
     user = next((u for u in users if u['user_id'] == user_id), None)
     if user:
