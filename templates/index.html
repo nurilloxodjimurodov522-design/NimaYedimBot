@@ -3,74 +3,75 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Kaloriya Tracker Pro - Gemini AI</title>
-    
-    <!-- Telegram Web App Script - MUHIM! -->
+    <title>Kaloriya Tracker Pro</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    
-    <!-- Google Fonts -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
+        :root {
+            --primary: #667eea;
+            --secondary: #764ba2;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --bg-light: #f8f9fa;
+            --text-dark: #1a1a1a;
+            --card-bg: white;
         }
+        
+        [data-theme="dark"] {
+            --bg-light: #1a1a2e;
+            --text-dark: #e4e4e7;
+            --card-bg: #16213e;
+        }
+        
+        * { margin: 0; padding: 0; box-sizing: border-box; }
         
         body {
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
             min-height: 100vh;
-            color: #1a1a1a;
+            color: var(--text-dark);
             padding: 20px;
+            transition: all 0.3s;
         }
         
-        .container {
-            max-width: 480px;
-            margin: 0 auto;
-        }
+        .container { max-width: 480px; margin: 0 auto; }
         
         .header {
             text-align: center;
             color: white;
-            margin-bottom: 30px;
-            padding-top: 20px;
+            margin-bottom: 24px;
+            padding: 20px 0;
         }
         
-        .header h1 {
-            font-size: 28px;
-            font-weight: 700;
-            margin-bottom: 8px;
-        }
-        
-        .header p {
-            font-size: 14px;
-            opacity: 0.9;
-        }
-        
+        .header h1 { font-size: 28px; margin-bottom: 8px; }
         .badge {
             display: inline-block;
             background: rgba(255,255,255,0.2);
             padding: 4px 12px;
             border-radius: 20px;
             font-size: 12px;
-            margin-top: 8px;
+            margin: 4px;
         }
         
         .card {
-            background: white;
+            background: var(--card-bg);
             border-radius: 16px;
-            padding: 24px;
+            padding: 20px;
             margin-bottom: 16px;
             box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            transition: all 0.3s;
         }
         
         .card-title {
             font-size: 18px;
             font-weight: 600;
             margin-bottom: 16px;
-            color: #333;
+            display: flex;
+            align-items: center;
+            gap: 8px;
         }
         
         .stats-grid {
@@ -82,15 +83,14 @@
         .stat-item {
             text-align: center;
             padding: 16px;
-            background: #f8f9fa;
+            background: var(--bg-light);
             border-radius: 12px;
         }
         
         .stat-value {
-            font-size: 24px;
+            font-size: 28px;
             font-weight: 700;
-            color: #667eea;
-            display: block;
+            color: var(--primary);
         }
         
         .stat-label {
@@ -112,196 +112,322 @@
         }
         
         .btn-primary {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
             color: white;
         }
         
-        .btn-primary:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
-        }
+        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(102,126,234,0.4); }
+        .btn:disabled { opacity: 0.6; cursor: not-allowed; }
         
-        .input-group {
-            margin-bottom: 16px;
-        }
-        
+        .input-group { margin-bottom: 16px; }
         .input-group label {
             display: block;
             font-size: 14px;
             font-weight: 500;
             margin-bottom: 6px;
-            color: #333;
         }
-        
-        .input-group input,
-        .input-group select {
+        .input-group input, .input-group select {
             width: 100%;
             padding: 12px;
             border: 2px solid #e5e7eb;
             border-radius: 8px;
             font-size: 15px;
-            transition: border-color 0.3s;
-        }
-        
-        .input-group input:focus,
-        .input-group select:focus {
-            outline: none;
-            border-color: #667eea;
-        }
-        
-        .loading {
-            text-align: center;
-            padding: 40px;
-            color: white;
-            font-size: 16px;
-        }
-        
-        .hidden {
-            display: none;
         }
         
         .ai-badge {
-            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            background: linear-gradient(135deg, #f093fb, #f5576c);
             color: white;
             padding: 2px 8px;
             border-radius: 4px;
             font-size: 11px;
-            margin-left: 8px;
+        }
+        
+        .water-tracker {
+            display: flex;
+            gap: 8px;
+            margin-top: 12px;
+        }
+        
+        .water-btn {
+            flex: 1;
+            padding: 10px;
+            border: 2px solid var(--primary);
+            background: white;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            color: var(--primary);
+        }
+        
+        .water-btn:hover { background: var(--primary); color: white; }
+        
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: var(--bg-light);
+            border-radius: 4px;
+            overflow: hidden;
+            margin-top: 8px;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--primary), var(--secondary));
+            transition: width 0.3s;
+        }
+        
+        .chart-container {
+            position: relative;
+            height: 200px;
+            margin-top: 16px;
+        }
+        
+        .hidden { display: none; }
+        .loading { text-align: center; padding: 40px; color: white; }
+        
+        .language-selector {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1000;
+        }
+        
+        .theme-toggle {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            z-index: 1000;
+            background: white;
+            border: none;
+            padding: 8px;
+            border-radius: 50%;
+            cursor: pointer;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+        }
+        
+        .notification {
+            position: fixed;
+            top: 80px;
+            right: 20px;
+            background: var(--card-bg);
+            padding: 16px 24px;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+            z-index: 10000;
+            animation: slideIn 0.3s ease;
+        }
+        
+        @keyframes slideIn {
+            from { transform: translateX(400px); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
         }
     </style>
 </head>
 <body>
+    <button class="theme-toggle" onclick="toggleTheme()">🌓</button>
+    
+    <div class="language-selector">
+        <select id="languageSelect" onchange="changeLanguage()" style="padding: 8px; border-radius: 8px; border: none;">
+            <option value="uz">🇺🇿 O'zbek</option>
+            <option value="ru">🇷🇺 Русский</option>
+        </select>
+    </div>
+    
     <div class="container">
-        <!-- Loading Screen -->
         <div id="loading" class="loading">
             <div>Yuklanmoqda...</div>
         </div>
         
-        <!-- Welcome Screen (Ro'yxatdan o'tmagan) -->
+        <!-- Welcome Screen -->
         <div id="welcomeScreen" class="hidden">
             <div class="header">
                 <h1>🔥 Kaloriya Tracker</h1>
-                <span class="badge">✨ Gemini 3.5 Flash AI</span>
+                <span class="badge">✨ Gemini AI</span>
                 <p style="margin-top: 12px;">Profilingizni yarating</p>
             </div>
             
             <div class="card">
-                <h2 class="card-title">Ma'lumotlaringizni kiriting</h2>
-                
                 <div class="input-group">
-                    <label>Ism</label>
+                    <label>Ism / Имя</label>
                     <input type="text" id="name" placeholder="Ismingiz">
                 </div>
-                
                 <div class="input-group">
-                    <label>Vazn (kg)</label>
+                    <label>Vazn / Вес (kg)</label>
                     <input type="number" id="weight" placeholder="70" step="0.1">
                 </div>
-                
                 <div class="input-group">
-                    <label>Bo'y (cm)</label>
+                    <label>Bo'y / Рост (cm)</label>
                     <input type="number" id="height" placeholder="175">
                 </div>
-                
                 <div class="input-group">
-                    <label>Yosh</label>
+                    <label>Yosh / Возраст</label>
                     <input type="number" id="age" placeholder="25">
                 </div>
-                
                 <div class="input-group">
-                    <label>Jins</label>
+                    <label>Jins / Пол</label>
                     <select id="gender">
-                        <option value="male">Erkak</option>
-                        <option value="female">Ayol</option>
+                        <option value="male">Erkak / Мужской</option>
+                        <option value="female">Ayol / Женский</option>
                     </select>
                 </div>
-                
                 <div class="input-group">
-                    <label>Maqsad</label>
+                    <label>Maqsad / Цель</label>
                     <select id="goal">
-                        <option value="lose">Vazn yo'qotish</option>
-                        <option value="maintain">Saqlash</option>
-                        <option value="gain">Vazn to'plash</option>
+                        <option value="lose">Vazn yo'qotish / Похудеть</option>
+                        <option value="maintain">Saqlash / Поддержать</option>
+                        <option value="gain">Vazn to'plash / Набрать</option>
                     </select>
                 </div>
-                
-                <button class="btn btn-primary" onclick="registerUser()">
-                    Boshlash
-                </button>
+                <button class="btn btn-primary" onclick="registerUser()">Boshlash / Начать</button>
             </div>
         </div>
         
-        <!-- Main Dashboard (Ro'yxatdan o'tgan) -->
+        <!-- Dashboard -->
         <div id="dashboard" class="hidden">
             <div class="header">
                 <h1>🔥 Kaloriya Tracker</h1>
-                <span class="badge">✨ Gemini 3.5 Flash</span>
+                <span class="badge">✨ Gemini 2.0 Flash</span>
                 <p id="userName">Xush kelibsiz!</p>
             </div>
             
-            <!-- Kunlik statistika -->
+            <!-- Daily Stats -->
             <div class="card">
-                <h2 class="card-title">📊 Bugungi natijalar</h2>
+                <h2 class="card-title">📊 <span data-i18n="today">Bugungi natijalar</span></h2>
                 <div class="stats-grid">
                     <div class="stat-item">
                         <span class="stat-value" id="consumedCal">0</span>
-                        <div class="stat-label">Yegan</div>
+                        <div class="stat-label" data-i18n="eaten">Yegan</div>
                     </div>
                     <div class="stat-item">
                         <span class="stat-value" id="remainingCal">0</span>
-                        <div class="stat-label">Qolgan</div>
+                        <div class="stat-label" data-i18n="remaining">Qolgan</div>
                     </div>
                 </div>
             </div>
             
-            <!-- Ovqat qo'shish -->
+            <!-- Water Tracker -->
             <div class="card">
-                <h2 class="card-title">🍔 Ovqat qo'shish <span class="ai-badge">AI</span></h2>
+                <h2 class="card-title">💧 <span data-i18n="water">Suv</span></h2>
+                <div style="text-align: center; margin-bottom: 12px;">
+                    <span id="waterAmount" style="font-size: 24px; font-weight: 700; color: var(--primary);">0</span> ml / 2000 ml
+                </div>
+                <div class="progress-bar">
+                    <div class="progress-fill" id="waterProgress" style="width: 0%"></div>
+                </div>
+                <div class="water-tracker">
+                    <button class="water-btn" onclick="addWater(250)">+250ml</button>
+                    <button class="water-btn" onclick="addWater(500)">+500ml</button>
+                </div>
+            </div>
+            
+            <!-- Add Food -->
+            <div class="card">
+                <h2 class="card-title">🍔 <span data-i18n="addFood">Ovqat qo'shish</span> <span class="ai-badge">AI</span></h2>
                 <div class="input-group">
                     <input type="text" id="foodName" placeholder="Masalan: non, osh, olma...">
                 </div>
-                <button class="btn btn-primary" onclick="addFood()">
-                    Kaloriyani hisoblash
-                </button>
+                <button class="btn btn-primary" onclick="addFood(event)"><span data-i18n="calculate">Kaloriyani hisoblash</span></button>
             </div>
             
-            <!-- Vazn kuzatish -->
+            <!-- Workout -->
             <div class="card">
-                <h2 class="card-title">⚖️ Vazn o'lchash</h2>
+                <h2 class="card-title">🏃 <span data-i18n="workout">Mashg'ulot</span></h2>
                 <div class="input-group">
-                    <input type="number" id="currentWeight" placeholder="Hozirgi vazningiz (kg)" step="0.1">
+                    <input type="text" id="workoutName" placeholder="Masalan: yugurish, suzish...">
                 </div>
-                <button class="btn btn-primary" onclick="logWeight()">
-                    Saqlash
-                </button>
+                <div class="input-group">
+                    <input type="number" id="workoutDuration" placeholder="Daqiqa / min" value="30">
+                </div>
+                <button class="btn btn-primary" onclick="addWorkout()"><span data-i18n="logWorkout">Saqlash</span></button>
             </div>
             
-            <!-- Tavsiyalar -->
+            <!-- Weight -->
             <div class="card">
-                <h2 class="card-title">💡 AI Tavsiyalar <span class="ai-badge">AI</span></h2>
-                <button class="btn btn-primary" onclick="getRecommendations()">
-                    Tavsiya olish
-                </button>
-                <div id="recommendationText" style="margin-top: 12px; padding: 12px; background: #f8f9fa; border-radius: 8px; display: none;"></div>
+                <h2 class="card-title">⚖️ <span data-i18n="weight">Vazn o'lchash</span></h2>
+                <div class="input-group">
+                    <input type="number" id="currentWeight" placeholder="Hozirgi vazn (kg)" step="0.1">
+                </div>
+                <button class="btn btn-primary" onclick="logWeight()"><span data-i18n="save">Saqlash</span></button>
+            </div>
+            
+            <!-- AI Recommendations -->
+            <div class="card">
+                <h2 class="card-title">💡 <span data-i18n="aiTips">AI Tavsiyalar</span> <span class="ai-badge">AI</span></h2>
+                <button class="btn btn-primary" onclick="getRecommendations()"><span data-i18n="getTips">Tavsiya olish</span></button>
+                <div id="recommendationText" style="margin-top: 12px; display: none;"></div>
+            </div>
+            
+            <!-- Statistics Chart -->
+            <div class="card">
+                <h2 class="card-title">📈 <span data-i18n="stats">Statistika</span></h2>
+                <select id="periodSelect" onchange="loadStatistics()" style="width: 100%; padding: 8px; margin-bottom: 12px; border-radius: 8px;">
+                    <option value="week">So'nggi 7 kun</option>
+                    <option value="month">So'nggi 30 kun</option>
+                </select>
+                <div class="chart-container">
+                    <canvas id="caloriesChart"></canvas>
+                </div>
+            </div>
+            
+            <!-- Settings -->
+            <div class="card">
+                <h2 class="card-title">⚙️ <span data-i18n="settings">Sozlamalar</span></h2>
+                <button class="btn btn-primary" onclick="showSettings()"><span data-i18n="profileSettings">Profil sozlamalari</span></button>
             </div>
         </div>
     </div>
     
     <script>
-        // Telegram WebApp ni ishga tushirish
         const tg = window.Telegram.WebApp;
         tg.expand();
         tg.ready();
         
-        // Foydalanuvchi ID
         const userId = tg.initDataUnsafe.user?.id?.toString() || 'test_user';
+        let currentLang = 'uz';
+        let dailyNorm = 2000;
+        let chartInstance = null;
         
-        // Sahifa yuklanganda
+        const translations = {
+            uz: {
+                today: "Bugungi natijalar",
+                eaten: "Yegan",
+                remaining: "Qolgan",
+                water: "Suv",
+                addFood: "Ovqat qo'shish",
+                calculate: "Kaloriyani hisoblash",
+                workout: "Mashg'ulot",
+                logWorkout: "Saqlash",
+                weight: "Vazn o'lchash",
+                save: "Saqlash",
+                aiTips: "AI Tavsiyalar",
+                getTips: "Tavsiya olish",
+                stats: "Statistika",
+                settings: "Sozlamalar",
+                profileSettings: "Profil sozlamalari"
+            },
+            ru: {
+                today: "Сегодня",
+                eaten: "Съедено",
+                remaining: "Осталось",
+                water: "Вода",
+                addFood: "Добавить еду",
+                calculate: "Посчитать калории",
+                workout: "Тренировка",
+                logWorkout: "Сохранить",
+                weight: "Вес",
+                save: "Сохранить",
+                aiTips: "AI Советы",
+                getTips: "Получить совет",
+                stats: "Статистика",
+                settings: "Настройки",
+                profileSettings: "Настройки профиля"
+            }
+        };
+        
         window.onload = async function() {
             await checkUser();
         };
         
-        // Foydalanuvchini tekshirish
         async function checkUser() {
             try {
                 const response = await fetch(`/api/user/${userId}`);
@@ -310,27 +436,31 @@
                 document.getElementById('loading').classList.add('hidden');
                 
                 if (data.exists) {
-                    // Ro'yxatdan o'tgan - dashboardni ko'rsat
-                    showDashboard(data.user, data.today_calories);
+                    currentLang = data.user.language || 'uz';
+                    dailyNorm = parseInt(data.user.daily_calorie_norm);
+                    document.getElementById('languageSelect').value = currentLang;
+                    showDashboard(data.user, data.today_calories, data.today_water);
                 } else {
-                    // Ro'yxatdan o'tmagan - welcome screen
                     document.getElementById('welcomeScreen').classList.remove('hidden');
                 }
             } catch (error) {
-                console.error('Xatolik:', error);
-                alert('Server xatoligi. Qaytadan urinib ko\'ring.');
+                console.error('Error:', error);
             }
         }
         
-        // Dashboardni ko'rsatish
-        function showDashboard(user, calories) {
+        function showDashboard(user, calories, water) {
             document.getElementById('dashboard').classList.remove('hidden');
-            document.getElementById('userName').textContent = `Xush kelibsiz, ${user.name || 'Foydalanuvchi'}!`;
+            document.getElementById('userName').textContent = `${user.name || 'User'}`;
             document.getElementById('consumedCal').textContent = calories;
-            document.getElementById('remainingCal').textContent = user.daily_calorie_norm - calories;
+            document.getElementById('remainingCal').textContent = dailyNorm - calories;
+            document.getElementById('waterAmount').textContent = water || 0;
+            
+            const waterPercent = Math.min(((water || 0) / 2000) * 100, 100);
+            document.getElementById('waterProgress').style.width = waterPercent + '%';
+            
+            updateLanguage();
         }
         
-        // Ro'yxatdan o'tish
         async function registerUser() {
             const userData = {
                 user_id: userId,
@@ -339,7 +469,8 @@
                 height: document.getElementById('height').value,
                 age: document.getElementById('age').value,
                 gender: document.getElementById('gender').value,
-                goal: document.getElementById('goal').value
+                goal: document.getElementById('goal').value,
+                language: currentLang
             };
             
             try {
@@ -350,107 +481,195 @@
                 });
                 
                 const data = await response.json();
-                
                 if (data.success) {
-                    tg.showAlert('Profilingiz yaratildi!');
+                    dailyNorm = data.daily_norm;
+                    tg.showAlert('✅ Profil yaratildi!');
                     await checkUser();
-                } else {
-                    tg.showAlert('Xatolik yuz berdi. Qaytadan urinib ko\'ring.');
                 }
             } catch (error) {
-                console.error('Xatolik:', error);
-                tg.showAlert('Server xatoligi.');
+                tg.showAlert('❌ Xatolik');
             }
         }
         
-        // Ovqat qo'shish (Gemini AI)
-        async function addFood() {
+        async function addFood(event) {
             const foodName = document.getElementById('foodName').value;
-            if (!foodName) {
-                tg.showAlert('Ovqat nomini kiriting!');
-                return;
-            }
+            if (!foodName) { tg.showAlert('Ovqat nomini kiriting!'); return; }
             
-            tg.showPopup({
-                title: 'Hisoblanmoqda...',
-                message: 'Gemini AI kaloriyani hisoblamoqda',
-                buttons: [{type: 'ok'}]
-            });
+            const btn = event.target;
+            btn.disabled = true;
+            btn.textContent = '⏳...';
             
             try {
                 const response = await fetch('/api/food/log', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        user_id: userId,
-                        food_name: foodName
-                    })
+                    body: JSON.stringify({ user_id: userId, food_name: foodName })
                 });
                 
                 const data = await response.json();
-                
                 if (data.success) {
-                    tg.showAlert(`${foodName}: ${data.calories} kcal\n\n${data.details}`);
+                    showNotification(`✅ ${foodName}\n🔥 ${data.calories} kcal`);
                     document.getElementById('foodName').value = '';
                     await checkUser();
-                } else {
-                    tg.showAlert('Xatolik: ' + data.error);
                 }
             } catch (error) {
-                console.error('Xatolik:', error);
-                tg.showAlert('Server xatoligi.');
+                tg.showAlert('❌ Xatolik');
+            } finally {
+                btn.disabled = false;
+                btn.textContent = translations[currentLang].calculate;
             }
         }
         
-        // Vazn kuzatish
+        async function addWater(amount) {
+            try {
+                await fetch('/api/water/log', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ user_id: userId, amount_ml: amount })
+                });
+                showNotification(`💧 +${amount}ml suv qo'shildi`);
+                await checkUser();
+            } catch (error) {
+                tg.showAlert('❌ Xatolik');
+            }
+        }
+        
+        async function addWorkout() {
+            const workoutName = document.getElementById('workoutName').value;
+            const duration = document.getElementById('workoutDuration').value;
+            
+            if (!workoutName) { tg.showAlert('Mashg'ulot nomini kiriting!'); return; }
+            
+            try {
+                const response = await fetch('/api/workout/log', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ user_id: userId, workout_name: workoutName, duration_min: duration })
+                });
+                
+                const data = await response.json();
+                if (data.success) {
+                    showNotification(`🏃 ${workoutName}\n🔥 ${data.calories_burned} kcal yoqildi`);
+                    document.getElementById('workoutName').value = '';
+                }
+            } catch (error) {
+                tg.showAlert('❌ Xatolik');
+            }
+        }
+        
         async function logWeight() {
             const weight = document.getElementById('currentWeight').value;
-            if (!weight) {
-                tg.showAlert('Vaznni kiriting!');
-                return;
-            }
+            if (!weight) { tg.showAlert('Vaznni kiriting!'); return; }
             
             try {
                 const response = await fetch('/api/weight/log', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        user_id: userId,
-                        weight: weight
-                    })
+                    body: JSON.stringify({ user_id: userId, weight: weight })
                 });
                 
                 const data = await response.json();
-                
                 if (data.success) {
-                    tg.showAlert(`Vazn saqlandi: ${weight} kg`);
+                    tg.showAlert(`✅ Vazn saqlandi: ${weight} kg`);
                     document.getElementById('currentWeight').value = '';
-                } else {
-                    tg.showAlert('Xatolik yuz berdi.');
                 }
             } catch (error) {
-                console.error('Xatolik:', error);
-                tg.showAlert('Server xatoligi.');
+                tg.showAlert('❌ Xatolik');
             }
         }
         
-        // AI Tavsiyalar olish
         async function getRecommendations() {
             try {
                 const response = await fetch(`/api/recommendations/${userId}`);
                 const data = await response.json();
                 
                 if (data.success) {
-                    const recDiv = document.getElementById('recommendationText');
-                    recDiv.textContent = data.recommendation;
-                    recDiv.style.display = 'block';
-                } else {
-                    tg.showAlert('Tavsiya olinmadi.');
+                    const div = document.getElementById('recommendationText');
+                    div.innerHTML = `<div style="background: linear-gradient(135deg, #f093fb, #f5576c); color: white; padding: 16px; border-radius: 8px;">
+                        <strong>💡 AI Tavsiya:</strong><br>${data.recommendation}</div>`;
+                    div.style.display = 'block';
                 }
             } catch (error) {
-                console.error('Xatolik:', error);
-                tg.showAlert('Server xatoligi.');
+                tg.showAlert('❌ Xatolik');
             }
+        }
+        
+        async function loadStatistics() {
+            const period = document.getElementById('periodSelect').value;
+            
+            try {
+                const response = await fetch(`/api/statistics/${userId}?period=${period}`);
+                const data = await response.json();
+                
+                const dates = Object.keys(data.daily_calories).reverse();
+                const calories = dates.map(date => data.daily_calories[date]);
+                
+                if (chartInstance) chartInstance.destroy();
+                
+                const ctx = document.getElementById('caloriesChart').getContext('2d');
+                chartInstance = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: dates,
+                        datasets: [{
+                            label: 'Kaloriya',
+                            data: calories,
+                            borderColor: '#667eea',
+                            backgroundColor: 'rgba(102,126,234,0.1)',
+                            tension: 0.4,
+                            fill: true
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: { legend: { display: false } },
+                        scales: {
+                            y: { beginAtZero: true },
+                            x: { display: dates.length > 0 }
+                        }
+                    }
+                });
+            } catch (error) {
+                console.error('Stats error:', error);
+            }
+        }
+        
+        function changeLanguage() {
+            currentLang = document.getElementById('languageSelect').value;
+            updateLanguage();
+            
+            // Save language
+            fetch(`/api/user/${userId}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ language: currentLang })
+            });
+        }
+        
+        function updateLanguage() {
+            const t = translations[currentLang];
+            document.querySelectorAll('[data-i18n]').forEach(el => {
+                const key = el.getAttribute('data-i18n');
+                if (t[key]) el.textContent = t[key];
+            });
+        }
+        
+        function toggleTheme() {
+            const current = document.body.getAttribute('data-theme');
+            document.body.setAttribute('data-theme', current === 'dark' ? 'light' : 'dark');
+        }
+        
+        function showNotification(message) {
+            const div = document.createElement('div');
+            div.className = 'notification';
+            div.textContent = message;
+            document.body.appendChild(div);
+            setTimeout(() => div.remove(), 3000);
+        }
+        
+        function showSettings() {
+            tg.showAlert('Sozlamalar tez orada qo\'shiladi!');
         }
     </script>
 </body>
