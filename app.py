@@ -579,8 +579,9 @@ TELEGRAM_BOT_TOKEN = os.getenv('TELEGRAM_BOT_TOKEN')
 WEB_APP_URL = os.getenv('WEB_APP_URL', 'https://nimayedimbot-pro-production.up.railway.app')
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Bot start handler - foydalanuvchiga xabar yuboradi"""
+    """Bot start handler - chiroyli xabar bilan"""
     user_id = str(update.effective_user.id)
+    user_name = update.effective_user.first_name
     
     logger.info(f"User {user_id} started the bot")
     
@@ -588,17 +589,55 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text("❌ Siz bloklangan foydalanuvchisiz.")
         return
     
-    keyboard = [[InlineKeyboardButton(" Ilovani Ochish", web_app={"url": WEB_APP_URL})]]
+    # Chiroyli inline keyboard
+    keyboard = [[InlineKeyboardButton("📱 Ilovani Ochish", web_app={"url": WEB_APP_URL})]]
+    reply_markup = InlineKeyboardMarkup(keyboard)
     
     user = User.query.get(user_id)
     lang = user.language if user else 'uz'
     
     if lang == 'ru':
-        text = "👋 *Добро пожаловать!*\n\n🍏 Трекер калорий\n✨ Gemini AI\n\nНажмите кнопку ниже:"
+        text = f"""
+👋 *Добро пожаловать, {user_name}!*
+
+🍏 *Kaloriya Tracker Pro*
+🤖 Powered by Gemini 2.0 AI
+
+📊 *Возможности:*
+• 🍔 AI подсчет калорий
+• 💧 Трекер воды
+• 🏃 Учет тренировок
+• 📈 Статистика
+• 💡 AI диетолог
+
+Нажмите кнопку ниже, чтобы начать:
+        """
     else:
-        text = "👋 *Xush kelibsiz!*\n\n🍏 Kaloriya trekeri\n✨ Gemini AI\n\nTugmani bosing:"
+        text = f"""
+👋 *Xush kelibsiz, {user_name}!*
+
+🔥 *Kaloriya Tracker Pro*
+✨ Powered by Gemini 2.0 AI
+
+📊 *Imkoniyatlar:*
+• 🍔 AI bilan kaloriya hisoblash
+• 💧 Suv ichish trackeri
+• 🏃 Mashg'ulotlarni kuzatish
+• 📈 Chiroyli statistika
+• 💡 AI dietolog maslahatlari
+• ⚖️ Vazn monitoringi
+
+🎯 *Maqsadingiz sari birinchi qadam!*
+
+Quyidagi tugmani bosing va boshlang:
+        """
     
-    await update.message.reply_text(text, parse_mode='Markdown', reply_markup=InlineKeyboardMarkup(keyboard))
+    await update.message.reply_text(
+        text, 
+        parse_mode='Markdown',
+        reply_markup=reply_markup
+    )
+    
     logger.info(f"Start message sent to {user_id}")
 
 async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -615,7 +654,7 @@ async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 /users - Foydalanuvchilar ro'yxati
 /block <id> - Bloklash
 /unblock <id> - Blokdan chiqarish
-/broadcast <xabar> - Hammaga yuborish
+/broadcast <xabar> - Hammaga xabar yuborish
         """
     else:
         text = """
@@ -632,7 +671,7 @@ async def admin_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = str(update.effective_user.id)
     
     if not is_admin(user_id):
-        await update.message.reply_text(" Siz admin emassiz!")
+        await update.message.reply_text("❌ Siz admin emassiz!")
         return
     
     total_users = User.query.count()
@@ -676,7 +715,7 @@ async def block_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
     
     if not context.args:
-        await update.message.reply_text(" Foydalanuvchi ID sini kiriting!")
+        await update.message.reply_text("❌ Foydalanuvchi ID sini kiriting!")
         return
     
     target_user = User.query.get(context.args[0])
@@ -738,12 +777,12 @@ async def broadcast_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 def run_flask():
     port = int(os.environ.get('PORT', 5000))
-    logger.info(f" Flask on port {port}")
+    logger.info(f"🚀 Flask on port {port}")
     app.run(host='0.0.0.0', port=port, debug=False, use_reloader=False)
 
 if __name__ == '__main__':
     logger.info("=" * 60)
-    logger.info(" NimaYedimBot - Professional Kaloriya Tracker")
+    logger.info("🍏 NimaYedimBot - Professional Kaloriya Tracker")
     logger.info("🗄️  Database: PostgreSQL")
     logger.info("✨ Gemini 2.0 Flash AI")
     logger.info("=" * 60)
@@ -756,7 +795,7 @@ if __name__ == '__main__':
     flask_thread.start()
     logger.info("✅ Flask started")
     
-    logger.info(" Starting Telegram Bot...")
+    logger.info("🤖 Starting Telegram Bot...")
     
     try:
         application = Application.builder().token(TELEGRAM_BOT_TOKEN).build()
