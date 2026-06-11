@@ -45,11 +45,11 @@ else:
 GEMINI_API_KEY = os.getenv('GEMINI_API_KEY')
 genai.configure(api_key=GEMINI_API_KEY)
 try:
-    model = genai.GenerativeModel('gemini-2.0-flash-exp')
+    model = genai.GenerativeModel('gemini-3.5-flash')
 except:
-    model = genai.GenerativeModel('gemini-1.5-flash')
+    model = genai.GenerativeModel('gemini-3.5-flash')
 
-logger.info("✅ Gemini AI initialized")
+logger.info("✅ Gemini 3.5 Flash AI initialized")
 
 # Admin users
 ADMIN_USERS = os.getenv('ADMIN_USERS', '').split(',')
