@@ -2,11 +2,11 @@
 <html lang="uz">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Kaloriya Tracker Pro</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     
     <style>
         :root {
@@ -18,12 +18,14 @@
             --bg-light: #f8f9fa;
             --text-dark: #1a1a1a;
             --card-bg: white;
+            --shadow: 0 4px 20px rgba(0,0,0,0.1);
         }
         
         [data-theme="dark"] {
             --bg-light: #1a1a2e;
             --text-dark: #e4e4e7;
             --card-bg: #16213e;
+            --shadow: 0 4px 20px rgba(0,0,0,0.3);
         }
         
         * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -33,11 +35,11 @@
             background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
             min-height: 100vh;
             color: var(--text-dark);
-            padding: 20px;
+            padding-bottom: 80px;
             transition: all 0.3s;
         }
         
-        .container { max-width: 480px; margin: 0 auto; }
+        .container { max-width: 480px; margin: 0 auto; padding: 20px; }
         
         .header {
             text-align: center;
@@ -46,7 +48,7 @@
             padding: 20px 0;
         }
         
-        .header h1 { font-size: 28px; margin-bottom: 8px; }
+        .header h1 { font-size: 28px; margin-bottom: 8px; font-weight: 800; }
         .badge {
             display: inline-block;
             background: rgba(255,255,255,0.2);
@@ -54,6 +56,7 @@
             border-radius: 20px;
             font-size: 12px;
             margin: 4px;
+            backdrop-filter: blur(10px);
         }
         
         .card {
@@ -61,7 +64,7 @@
             border-radius: 16px;
             padding: 20px;
             margin-bottom: 16px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            box-shadow: var(--shadow);
         }
         
         .card-title {
@@ -131,6 +134,8 @@
             border: 2px solid #e5e7eb;
             border-radius: 8px;
             font-size: 15px;
+            background: var(--card-bg);
+            color: var(--text-dark);
         }
         
         .ai-badge {
@@ -184,59 +189,56 @@
         .hidden { display: none !important; }
         .loading { text-align: center; padding: 40px; color: white; }
         
-        .language-selector {
+        /* Bottom Navigation */
+        .bottom-nav {
             position: fixed;
-            top: 20px;
-            right: 20px;
-            z-index: 1000;
-        }
-        
-        .language-selector select {
-            background: white;
-            border: 2px solid rgba(255,255,255,0.3);
-            padding: 8px 16px;
-            border-radius: 25px;
-            font-size: 14px;
-            cursor: pointer;
-            backdrop-filter: blur(10px);
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-        }
-        
-        .theme-toggle {
-            position: fixed;
-            top: 20px;
-            left: 20px;
-            z-index: 1000;
-            background: white;
-            border: none;
-            padding: 10px;
-            border-radius: 50%;
-            cursor: pointer;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
-            width: 40px;
-            height: 40px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-        
-        .notification {
-            position: fixed;
-            top: 80px;
-            right: 20px;
+            bottom: 0;
+            left: 0;
+            right: 0;
             background: var(--card-bg);
-            padding: 16px 24px;
-            border-radius: 12px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
-            z-index: 10000;
-            animation: slideIn 0.3s ease;
+            box-shadow: 0 -4px 20px rgba(0,0,0,0.1);
+            display: flex;
+            justify-content: space-around;
+            padding: 12px 0;
+            z-index: 1000;
         }
         
-        @keyframes slideIn {
-            from { transform: translateX(400px); opacity: 0; }
-            to { transform: translateX(0); opacity: 1; }
+        .nav-item {
+            flex: 1;
+            text-align: center;
+            cursor: pointer;
+            padding: 8px;
+            transition: all 0.3s;
         }
         
+        .nav-item.active {
+            color: var(--primary);
+        }
+        
+        .nav-item:not(.active) {
+            color: #999;
+        }
+        
+        .nav-icon {
+            font-size: 24px;
+            margin-bottom: 4px;
+        }
+        
+        .nav-label {
+            font-size: 11px;
+            font-weight: 500;
+        }
+        
+        /* Tab Content */
+        .tab-content {
+            display: none;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        /* Profile Section */
         .profile-section {
             background: var(--bg-light);
             padding: 16px;
@@ -427,6 +429,8 @@
             border: 2px solid #e5e7eb;
             border-radius: 25px;
             font-size: 15px;
+            background: var(--card-bg);
+            color: var(--text-dark);
         }
         
         .chat-input button {
@@ -438,27 +442,87 @@
             cursor: pointer;
             font-weight: 600;
         }
+        
+        /* Settings */
+        .settings-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 16px;
+            background: var(--bg-light);
+            border-radius: 12px;
+            margin-bottom: 12px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .settings-item:hover {
+            transform: translateX(4px);
+        }
+        
+        .settings-label {
+            font-weight: 500;
+        }
+        
+        .settings-value {
+            color: #666;
+            font-size: 14px;
+        }
+        
+        /* Notification */
+        .notification {
+            position: fixed;
+            top: 80px;
+            right: 20px;
+            background: var(--card-bg);
+            padding: 16px 24px;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+            z-index: 10000;
+            animation: slideIn 0.3s ease;
+        }
+        
+        @keyframes slideIn {
+            from { transform: translateX(400px); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+        
+        /* Quick Tips */
+        .tips-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-top: 12px;
+        }
+        
+        .tip-card {
+            background: var(--bg-light);
+            padding: 16px;
+            border-radius: 12px;
+            text-align: center;
+        }
+        
+        .tip-icon {
+            font-size: 32px;
+            margin-bottom: 8px;
+        }
+        
+        .tip-text {
+            font-size: 12px;
+            color: #666;
+        }
     </style>
 </head>
 <body>
-    <button class="theme-toggle" onclick="toggleTheme()">🌓</button>
-    
-    <div class="language-selector">
-        <select id="languageSelect" onchange="changeLanguage()">
-            <option value="uz">🇺🇿 O'zbek</option>
-            <option value="ru">🇷🇺 Русский</option>
-        </select>
-    </div>
-    
     <div class="container">
         <div id="loading" class="loading">
             <div>Yuklanmoqda...</div>
         </div>
         
-        <!-- Dashboard -->
-        <div id="dashboard" class="hidden">
+        <!-- Dashboard Tab -->
+        <div id="tab-dashboard" class="tab-content">
             <div class="header">
-                <h1>🔥 Kaloriya Tracker</h1>
+                <h1> Kaloriya Tracker</h1>
                 <span class="badge">✨ Gemini 2.0 Flash</span>
                 <p id="userName">Xush kelibsiz!</p>
             </div>
@@ -471,22 +535,22 @@
                             <div class="profile-name" id="profileName">-</div>
                             <div class="profile-stats" id="profileStats">-</div>
                         </div>
-                        <button class="edit-btn" onclick="showProfileSettings()">✏️</button>
+                        <button class="edit-btn" onclick="switchTab('settings')">️</button>
                     </div>
                 </div>
             </div>
             
             <!-- Daily Stats -->
             <div class="card">
-                <h2 class="card-title">📊 <span data-i18n="today">Bugungi natijalar</span></h2>
+                <h2 class="card-title">📊 Bugungi natijalar</h2>
                 <div class="stats-grid">
                     <div class="stat-item">
                         <span class="stat-value" id="consumedCal">0</span>
-                        <div class="stat-label" data-i18n="eaten">Yegan</div>
+                        <div class="stat-label">Yegan</div>
                     </div>
                     <div class="stat-item">
                         <span class="stat-value" id="remainingCal">0</span>
-                        <div class="stat-label" data-i18n="remaining">Qolgan</div>
+                        <div class="stat-label">Qolgan</div>
                     </div>
                 </div>
                 <div style="margin-top: 12px; padding: 12px; background: var(--bg-light); border-radius: 8px;">
@@ -498,7 +562,7 @@
             
             <!-- Bugungi ovqatlar -->
             <div class="card">
-                <h2 class="card-title">🍽️ Bugungi ovqatlar</h2>
+                <h2 class="card-title">️ Bugungi ovqatlar</h2>
                 <div id="todayFoodList" class="food-list">
                     <div style="text-align: center; color: #999; padding: 20px;">Hali ovqat qo'shilmagan</div>
                 </div>
@@ -506,7 +570,7 @@
             
             <!-- Bugungi mashg'ulotlar -->
             <div class="card">
-                <h2 class="card-title">🏃 Bugungi mashg'ulotlar</h2>
+                <h2 class="card-title"> Bugungi mashg'ulotlar</h2>
                 <div id="todayWorkoutList" class="workout-list">
                     <div style="text-align: center; color: #999; padding: 20px;">Hali mashg'ulot qo'shilmagan</div>
                 </div>
@@ -514,7 +578,7 @@
             
             <!-- Water Tracker -->
             <div class="card">
-                <h2 class="card-title">💧 <span data-i18n="water">Suv</span></h2>
+                <h2 class="card-title"> Suv</h2>
                 <div style="text-align: center; margin-bottom: 12px;">
                     <span id="waterAmount" style="font-size: 24px; font-weight: 700; color: var(--primary);">0</span> ml / 2000 ml
                 </div>
@@ -527,36 +591,179 @@
                 </div>
             </div>
             
-            <!-- Add Food -->
+            <!-- Quick Tips -->
             <div class="card">
-                <h2 class="card-title">🍔 <span data-i18n="addFood">Ovqat qo'shish</span> <span class="ai-badge">AI</span></h2>
-                <div class="input-group">
-                    <input type="text" id="foodName" placeholder="Masalan: non, osh, olma...">
+                <h2 class="card-title">💡 Tezkor maslahatlar</h2>
+                <div class="tips-grid">
+                    <div class="tip-card">
+                        <div class="tip-icon">💧</div>
+                        <div class="tip-text">Kuniga 2L suv iching</div>
+                    </div>
+                    <div class="tip-card">
+                        <div class="tip-icon">🥗</div>
+                        <div class="tip-text">Sabzavotlar ko'proq</div>
+                    </div>
+                    <div class="tip-card">
+                        <div class="tip-icon">🏃</div>
+                        <div class="tip-text">30 daqiqa sport</div>
+                    </div>
+                    <div class="tip-card">
+                        <div class="tip-icon">😴</div>
+                        <div class="tip-text">7-8 soat uyqu</div>
+                    </div>
                 </div>
-                <button class="btn btn-primary" onclick="addFood(event)"><span data-i18n="calculate">Kaloriyani hisoblash</span></button>
+            </div>
+        </div>
+        
+        <!-- Food Tab -->
+        <div id="tab-food" class="tab-content">
+            <div class="header">
+                <h1>🍔 Ovqat qo'shish</h1>
+                <p>Ovqat nomini yozing, AI kaloriyani hisoblaydi</p>
             </div>
             
-            <!-- Workout -->
             <div class="card">
-                <h2 class="card-title">🏃 <span data-i18n="workout">Mashg'ulot</span></h2>
+                <h2 class="card-title"> Yangi ovqat <span class="ai-badge">AI</span></h2>
                 <div class="input-group">
+                    <label>Ovqat nomi</label>
+                    <input type="text" id="foodName" placeholder="Masalan: non, osh, olma...">
+                </div>
+                <button class="btn btn-primary" onclick="addFood(event)">Kaloriyani hisoblash</button>
+            </div>
+            
+            <div class="card">
+                <h2 class="card-title">🏃 Mashg'ulot qo'shish</h2>
+                <div class="input-group">
+                    <label>Mashg'ulot nomi</label>
                     <input type="text" id="workoutName" placeholder="Masalan: yugurish, suzish...">
                 </div>
                 <div class="input-group">
-                    <input type="number" id="workoutDuration" placeholder="Daqiqa / min" value="30">
+                    <label>Davomiyligi (daqiqa)</label>
+                    <input type="number" id="workoutDuration" placeholder="30" value="30">
                 </div>
-                <button class="btn btn-primary" onclick="addWorkout()"><span data-i18n="logWorkout">Saqlash</span></button>
+                <button class="btn btn-primary" onclick="addWorkout()">Saqlash</button>
             </div>
             
-            <!-- AI Recommendations -->
             <div class="card">
-                <h2 class="card-title">💡 <span data-i18n="aiTips">AI Dietolog</span> <span class="ai-badge">AI</span></h2>
-                <button class="btn btn-primary" onclick="openAIChat()"><span data-i18n="getTips">Chatni ochish</span></button>
+                <h2 class="card-title">🍽️ Bugungi ovqatlar</h2>
+                <div id="foodTabList" class="food-list">
+                    <div style="text-align: center; color: #999; padding: 20px;">Hali ovqat qo'shilmagan</div>
+                </div>
             </div>
             
-            <!-- Statistics Chart -->
             <div class="card">
-                <h2 class="card-title">📈 <span data-i18n="stats">Statistika</span></h2>
+                <h2 class="card-title">🏃 Bugungi mashg'ulotlar</h2>
+                <div id="workoutTabList" class="workout-list">
+                    <div style="text-align: center; color: #999; padding: 20px;">Hali mashg'ulot qo'shilmagan</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- AI Chat Tab -->
+        <div id="tab-ai" class="tab-content">
+            <div class="header">
+                <h1>💡 AI Dietolog</h1>
+                <p>Professional maslahatlar oling</p>
+            </div>
+            
+            <div class="card">
+                <h2 class="card-title">💬 Savol bering <span class="ai-badge">AI</span></h2>
+                <div class="input-group">
+                    <label>Savolingiz</label>
+                    <input type="text" id="aiQuestion" placeholder="Masalan: Kuniga qancha suv ichish kerak?">
+                </div>
+                <button class="btn btn-primary" onclick="askAI()">Javob olish</button>
+            </div>
+            
+            <div class="card">
+                <h2 class="card-title">📝 AI Javoblari</h2>
+                <div id="aiResponses">
+                    <div style="text-align: center; color: #999; padding: 20px;">Hali savol bermagansiz</div>
+                </div>
+            </div>
+            
+            <div class="card">
+                <h2 class="card-title">💡 Tezkor maslahatlar</h2>
+                <div class="tips-grid">
+                    <div class="tip-card" onclick="quickAsk('Kuniga qancha suv ichish kerak?')">
+                        <div class="tip-icon">💧</div>
+                        <div class="tip-text">Suv iste'moli</div>
+                    </div>
+                    <div class="tip-card" onclick="quickAsk('Vazn yo\'qotish uchun nima qilish kerak?')">
+                        <div class="tip-icon">⚖️</div>
+                        <div class="tip-text">Vazn yo'qotish</div>
+                    </div>
+                    <div class="tip-card" onclick="quickAsk('Eng foydali ovqatlar qaysilar?')">
+                        <div class="tip-icon">🥗</div>
+                        <div class="tip-text">Foydali ovqatlar</div>
+                    </div>
+                    <div class="tip-card" onclick="quickAsk('Sportdan oldin nima yeyish kerak?')">
+                        <div class="tip-icon">🏃</div>
+                        <div class="tip-text">Sport va ovqat</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Settings Tab -->
+        <div id="tab-settings" class="tab-content">
+            <div class="header">
+                <h1>⚙️ Sozlamalar</h1>
+                <p>Profilingizni boshqaring</p>
+            </div>
+            
+            <div class="card">
+                <h2 class="card-title">👤 Profil ma'lumotlari</h2>
+                <div class="input-group">
+                    <label>Ism</label>
+                    <input type="text" id="editName" placeholder="Ismingiz">
+                </div>
+                <div class="input-group">
+                    <label>Vazn (kg)</label>
+                    <input type="number" id="editWeight" placeholder="70" step="0.1">
+                </div>
+                <div class="input-group">
+                    <label>Bo'y (cm)</label>
+                    <input type="number" id="editHeight" placeholder="175">
+                </div>
+                <div class="input-group">
+                    <label>Yosh</label>
+                    <input type="number" id="editAge" placeholder="25">
+                </div>
+                <div class="input-group">
+                    <label>Maqsad</label>
+                    <select id="editGoal">
+                        <option value="lose">Vazn yo'qotish</option>
+                        <option value="maintain">Saqlash</option>
+                        <option value="gain">Vazn to'plash</option>
+                    </select>
+                </div>
+                <button class="btn btn-primary" onclick="saveProfile()">Saqlash</button>
+            </div>
+            
+            <div class="card">
+                <h2 class="card-title">🎨 Ko'rinish</h2>
+                <div class="settings-item" onclick="toggleTheme()">
+                    <div>
+                        <div class="settings-label">🌓 Mavzu</div>
+                        <div class="settings-value" id="themeValue">Yorug'</div>
+                    </div>
+                    <div>›</div>
+                </div>
+            </div>
+            
+            <div class="card">
+                <h2 class="card-title"> Til</h2>
+                <div class="input-group">
+                    <select id="languageSelect" onchange="changeLanguage()">
+                        <option value="uz">🇺🇿 O'zbek</option>
+                        <option value="ru">🇷🇺 Русский</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div class="card">
+                <h2 class="card-title">📊 Statistika</h2>
                 <select id="periodSelect" onchange="loadStatistics()" style="width: 100%; padding: 8px; margin-bottom: 12px; border-radius: 8px;">
                     <option value="7">So'nggi 7 kun</option>
                     <option value="15">So'nggi 15 kun</option>
@@ -566,64 +773,36 @@
                     <canvas id="caloriesChart"></canvas>
                 </div>
             </div>
+            
+            <div class="card">
+                <h2 class="card-title">ℹ️ Ilova haqida</h2>
+                <p style="color: #666; font-size: 14px;">
+                    <strong>Kaloriya Tracker Pro</strong><br>
+                    Versiya: 1.0.0<br>
+                    Powered by Gemini 2.0 AI<br><br>
+                    Sog'lom hayot uchun professional kaloriya trackeri.
+                </p>
+            </div>
         </div>
     </div>
     
-    <!-- AI Chat Modal -->
-    <div id="aiChatModal" class="chat-container hidden">
-        <div class="chat-header">
-            <h3>💡 AI Dietolog</h3>
-            <button class="chat-close" onclick="closeAIChat()">×</button>
+    <!-- Bottom Navigation -->
+    <div class="bottom-nav">
+        <div class="nav-item active" onclick="switchTab('dashboard')">
+            <div class="nav-icon"></div>
+            <div class="nav-label">Dashboard</div>
         </div>
-        <div class="chat-messages" id="chatMessages">
-            <div class="chat-message ai">
-                Salom! Men sizning AI dietologingizman. Suv iste'moli, parhez, ovqatlanish haqida savollaringiz bo'lsa, bering!
-            </div>
+        <div class="nav-item" onclick="switchTab('food')">
+            <div class="nav-icon"></div>
+            <div class="nav-label">Ovqat</div>
         </div>
-        <div class="chat-input">
-            <input type="text" id="chatInput" placeholder="Savolingizni yozing..." onkeypress="if(event.key==='Enter') sendMessage()">
-            <button onclick="sendMessage()">Yuborish</button>
+        <div class="nav-item" onclick="switchTab('ai')">
+            <div class="nav-icon">💡</div>
+            <div class="nav-label">AI Dietolog</div>
         </div>
-    </div>
-    
-    <!-- Profile Settings Modal -->
-    <div id="profileModal" class="modal hidden">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h2>⚙️ Profil sozlamalari</h2>
-                <button class="modal-close" onclick="closeProfileSettings()">×</button>
-            </div>
-            
-            <div class="input-group">
-                <label>Ism</label>
-                <input type="text" id="editName" placeholder="Ismingiz">
-            </div>
-            
-            <div class="input-group">
-                <label>Vazn (kg)</label>
-                <input type="number" id="editWeight" placeholder="70" step="0.1">
-            </div>
-            
-            <div class="input-group">
-                <label>Bo'y (cm)</label>
-                <input type="number" id="editHeight" placeholder="175">
-            </div>
-            
-            <div class="input-group">
-                <label>Yosh</label>
-                <input type="number" id="editAge" placeholder="25">
-            </div>
-            
-            <div class="input-group">
-                <label>Maqsad</label>
-                <select id="editGoal">
-                    <option value="lose">Vazn yo'qotish</option>
-                    <option value="maintain">Saqlash</option>
-                    <option value="gain">Vazn to'plash</option>
-                </select>
-            </div>
-            
-            <button class="btn btn-primary" onclick="saveProfile()">Saqlash</button>
+        <div class="nav-item" onclick="switchTab('settings')">
+            <div class="nav-icon">⚙️</div>
+            <div class="nav-label">Sozlamalar</div>
         </div>
     </div>
     
@@ -632,7 +811,6 @@
         tg.expand();
         tg.ready();
         
-        // Telegram user ID yoki localStorage dan olish
         let userId = tg.initDataUnsafe.user?.id?.toString();
         
         if (!userId) {
@@ -640,12 +818,8 @@
             if (!userId) {
                 userId = 'user_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
                 localStorage.setItem('nimayedim_user_id', userId);
-                console.log('Yangi user yaratildi:', userId);
-            } else {
-                console.log('LocalStorage dan user topildi:', userId);
             }
         } else {
-            console.log('Telegram user:', userId);
             localStorage.setItem('nimayedim_user_id', userId);
         }
         
@@ -655,39 +829,6 @@
         let chartInstance = null;
         let todayFood = [];
         let todayWorkouts = [];
-        
-        const translations = {
-            uz: {
-                today: "Bugungi natijalar",
-                eaten: "Yegan",
-                remaining: "Qolgan",
-                water: "Suv",
-                addFood: "Ovqat qo'shish",
-                calculate: "Kaloriyani hisoblash",
-                workout: "Mashg'ulot",
-                logWorkout: "Saqlash",
-                weight: "Vazn o'lchash",
-                save: "Saqlash",
-                aiTips: "AI Dietolog",
-                getTips: "Chatni ochish",
-                stats: "Statistika"
-            },
-            ru: {
-                today: "Сегодня",
-                eaten: "Съедено",
-                remaining: "Осталось",
-                water: "Вода",
-                addFood: "Добавить еду",
-                calculate: "Посчитать калории",
-                workout: "Тренировка",
-                logWorkout: "Сохранить",
-                weight: "Вес",
-                save: "Сохранить",
-                aiTips: "AI Диетолог",
-                getTips: "Открыть чат",
-                stats: "Статистика"
-            }
-        };
         
         window.onload = async function() {
             await checkUser();
@@ -701,7 +842,6 @@
                 document.getElementById('loading').classList.add('hidden');
                 
                 if (data.exists) {
-                    // Foydalanuvchi mavjud - dashboardni ko'rsatish
                     currentLang = data.user.language || 'uz';
                     currentUser = data.user;
                     dailyNorm = parseInt(data.user.daily_calorie_norm);
@@ -709,7 +849,6 @@
                     await loadTodayData();
                     showDashboard(data.user, data.today_calories, data.today_water);
                 } else {
-                    // Yangi foydalanuvchi - avtomatik ro'yxatdan o'tkazish
                     await autoRegisterUser();
                 }
             } catch (error) {
@@ -718,16 +857,15 @@
         }
         
         async function autoRegisterUser() {
-            // Telegram dan ma'lumot olish
             const tgUser = tg.initDataUnsafe.user;
             const userData = {
                 user_id: userId,
                 name: tgUser?.first_name || 'Foydalanuvchi',
-                weight: 70,  // Default
-                height: 170, // Default
-                age: 25,     // Default
-                gender: tgUser?.gender === 'male' ? 'male' : 'female', // Default
-                goal: 'maintain', // Default
+                weight: 70,
+                height: 170,
+                age: 25,
+                gender: tgUser?.gender === 'male' ? 'male' : 'female',
+                goal: 'maintain',
                 language: currentLang
             };
             
@@ -743,14 +881,41 @@
                     dailyNorm = data.daily_norm;
                     currentUser = userData;
                     showDashboard(userData, 0, 0);
-                    
-                    // Faqat birinchi marta xabar ko'rsatish
                     setTimeout(function() {
-                        tg.showAlert('Xush kelibsiz! Profilingiz avtomatik yaratildi. Sozlamalardan o\'zgartirishingiz mumkin.');
+                        tg.showAlert('Xush kelibsiz! Profilingiz yaratildi.');
                     }, 500);
                 }
             } catch (error) {
                 console.error('Auto register error:', error);
+            }
+        }
+        
+        function switchTab(tabName) {
+            // Hide all tabs
+            document.querySelectorAll('.tab-content').forEach(function(tab) {
+                tab.classList.remove('active');
+            });
+            
+            // Remove active from nav
+            document.querySelectorAll('.nav-item').forEach(function(item) {
+                item.classList.remove('active');
+            });
+            
+            // Show selected tab
+            document.getElementById('tab-' + tabName).classList.add('active');
+            
+            // Set active nav
+            const navItems = document.querySelectorAll('.nav-item');
+            const tabIndex = ['dashboard', 'food', 'ai', 'settings'].indexOf(tabName);
+            if (tabIndex >= 0) {
+                navItems[tabIndex].classList.add('active');
+            }
+            
+            // Load data for tab
+            if (tabName === 'food') {
+                renderFoodTab();
+            } else if (tabName === 'settings') {
+                loadSettings();
             }
         }
         
@@ -820,8 +985,49 @@
             container.innerHTML = html;
         }
         
+        function renderFoodTab() {
+            const foodContainer = document.getElementById('foodTabList');
+            if (todayFood.length === 0) {
+                foodContainer.innerHTML = '<div style="text-align: center; color: #999; padding: 20px;">Hali ovqat qo\'shilmagan</div>';
+            } else {
+                let html = '';
+                todayFood.forEach(function(food) {
+                    html += '<div class="food-item">' +
+                        '<div>' +
+                            '<div class="food-name">' + food.food_name + '</div>' +
+                            '<div style="font-size: 12px; color: #666;">' + food.details + '</div>' +
+                        '</div>' +
+                        '<div style="display: flex; align-items: center;">' +
+                            '<span class="food-calories">' + food.calories + ' kcal</span>' +
+                            '<button class="delete-btn" onclick="deleteFood(\'' + food.log_id + '\')">×</button>' +
+                        '</div>' +
+                    '</div>';
+                });
+                foodContainer.innerHTML = html;
+            }
+            
+            const workoutContainer = document.getElementById('workoutTabList');
+            if (todayWorkouts.length === 0) {
+                workoutContainer.innerHTML = '<div style="text-align: center; color: #999; padding: 20px;">Hali mashg\'ulot qo\'shilmagan</div>';
+            } else {
+                let html = '';
+                todayWorkouts.forEach(function(workout) {
+                    html += '<div class="workout-item">' +
+                        '<div>' +
+                            '<div class="workout-name">' + workout.workout_name + '</div>' +
+                            '<div style="font-size: 12px; color: #666;">' + workout.duration_min + ' daqiqa</div>' +
+                        '</div>' +
+                        '<div style="display: flex; align-items: center;">' +
+                            '<span class="workout-calories">-' + workout.calories_burned + ' kcal</span>' +
+                            '<button class="delete-btn" onclick="deleteWorkout(\'' + workout.log_id + '\')">×</button>' +
+                        '</div>' +
+                    '</div>';
+                });
+                workoutContainer.innerHTML = html;
+            }
+        }
+        
         function showDashboard(user, calories, water) {
-            document.getElementById('dashboard').classList.remove('hidden');
             document.getElementById('userName').textContent = user.name || 'User';
             document.getElementById('profileName').textContent = user.name || 'User';
             document.getElementById('profileStats').textContent = user.weight + ' kg | ' + (user.goal === 'lose' ? 'Vazn yo\'qotish' : user.goal === 'gain' ? 'Vazn to\'plash' : 'Saqlash');
@@ -831,8 +1037,6 @@
             
             const waterPercent = Math.min(((water || 0) / 2000) * 100, 100);
             document.getElementById('waterProgress').style.width = waterPercent + '%';
-            
-            updateLanguage();
         }
         
         function updateDailyStats(consumed) {
@@ -875,6 +1079,7 @@
                         timestamp: new Date().toISOString()
                     });
                     renderTodayFood();
+                    renderFoodTab();
                     
                     const foodResponse = await fetch('/api/food/today/' + userId);
                     const foodData = await foodResponse.json();
@@ -883,12 +1088,17 @@
                     
                     showNotification(foodName + " - " + data.calories + " kcal qo'shildi");
                     document.getElementById('foodName').value = '';
+                    
+                    // Switch to dashboard
+                    setTimeout(function() {
+                        switchTab('dashboard');
+                    }, 1000);
                 }
             } catch (error) {
                 tg.showAlert('Xatolik');
             } finally {
                 btn.disabled = false;
-                btn.textContent = translations[currentLang].calculate;
+                btn.textContent = 'Kaloriyani hisoblash';
             }
         }
         
@@ -918,6 +1128,7 @@
                         timestamp: new Date().toISOString()
                     });
                     renderTodayWorkouts();
+                    renderFoodTab();
                     
                     const foodResponse = await fetch('/api/food/today/' + userId);
                     const foodData = await foodResponse.json();
@@ -926,6 +1137,10 @@
                     
                     showNotification(workoutName + " - " + data.calories_burned + " kcal yoqildi");
                     document.getElementById('workoutName').value = '';
+                    
+                    setTimeout(function() {
+                        switchTab('dashboard');
+                    }, 1000);
                 }
             } catch (error) {
                 tg.showAlert('Xatolik');
@@ -946,30 +1161,6 @@
             }
         }
         
-        async function logWeight() {
-            const weight = document.getElementById('currentWeight').value;
-            if (!weight) { 
-                tg.showAlert("Vaznni kiriting!"); 
-                return; 
-            }
-            
-            try {
-                const response = await fetch('/api/weight/log', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ user_id: userId, weight: weight })
-                });
-                
-                const data = await response.json();
-                if (data.success) {
-                    tg.showAlert("Vazn saqlandi: " + weight + " kg");
-                    document.getElementById('currentWeight').value = '';
-                }
-            } catch (error) {
-                tg.showAlert('Xatolik');
-            }
-        }
-        
         async function deleteFood(logId) {
             if (confirm('Bu ovqatni o\'chirmoqchimisiz?')) {
                 try {
@@ -981,6 +1172,7 @@
                         return f.log_id !== logId;
                     });
                     renderTodayFood();
+                    renderFoodTab();
                     
                     const foodResponse = await fetch('/api/food/today/' + userId);
                     const foodData = await foodResponse.json();
@@ -1005,6 +1197,7 @@
                         return w.log_id !== logId;
                     });
                     renderTodayWorkouts();
+                    renderFoodTab();
                     
                     const foodResponse = await fetch('/api/food/today/' + userId);
                     const foodData = await foodResponse.json();
@@ -1018,30 +1211,22 @@
             }
         }
         
-        function openAIChat() {
-            document.getElementById('aiChatModal').classList.remove('hidden');
-        }
-        
-        function closeAIChat() {
-            document.getElementById('aiChatModal').classList.add('hidden');
-        }
-        
-        async function sendMessage() {
-            const input = document.getElementById('chatInput');
-            const message = input.value.trim();
-            if (!message) return;
+        async function askAI() {
+            const question = document.getElementById('aiQuestion').value.trim();
+            if (!question) {
+                tg.showAlert("Savol kiriting!");
+                return;
+            }
             
-            const messagesDiv = document.getElementById('chatMessages');
-            messagesDiv.innerHTML += '<div class="chat-message user">' + message + '</div>';
-            input.value = '';
-            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+            const responsesDiv = document.getElementById('aiResponses');
+            responsesDiv.innerHTML = '<div style="text-align: center; color: #999; padding: 20px;">⏳ AI javob berayapti...</div>';
             
             try {
                 const response = await fetch('/api/ai/chat', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ 
-                        message: message,
+                        message: question,
                         user_id: userId,
                         context: {
                             daily_norm: dailyNorm,
@@ -1053,15 +1238,25 @@
                 
                 const data = await response.json();
                 if (data.success) {
-                    messagesDiv.innerHTML += '<div class="chat-message ai">' + data.response + '</div>';
-                    messagesDiv.scrollTop = messagesDiv.scrollHeight;
+                    responsesDiv.innerHTML = '<div style="background: var(--bg-light); padding: 16px; border-radius: 12px; margin-bottom: 12px;">' +
+                        '<div style="font-weight: 600; margin-bottom: 8px;">💬 Savol: ' + question + '</div>' +
+                        '<div style="color: #666;">' + data.response + '</div>' +
+                    '</div>' + responsesDiv.innerHTML;
+                    document.getElementById('aiQuestion').value = '';
+                } else {
+                    responsesDiv.innerHTML = '<div style="color: var(--danger); text-align: center;">Xatolik: ' + data.error + '</div>';
                 }
             } catch (error) {
-                messagesDiv.innerHTML += '<div class="chat-message ai">Kechirasiz, xatolik yuz berdi.</div>';
+                responsesDiv.innerHTML = '<div style="color: var(--danger); text-align: center;">Xatolik yuz berdi</div>';
             }
         }
         
-        function showProfileSettings() {
+        function quickAsk(question) {
+            document.getElementById('aiQuestion').value = question;
+            askAI();
+        }
+        
+        function loadSettings() {
             if (currentUser) {
                 document.getElementById('editName').value = currentUser.name || '';
                 document.getElementById('editWeight').value = currentUser.weight || '';
@@ -1069,11 +1264,9 @@
                 document.getElementById('editAge').value = currentUser.age || '';
                 document.getElementById('editGoal').value = currentUser.goal || 'maintain';
             }
-            document.getElementById('profileModal').classList.remove('hidden');
-        }
-        
-        function closeProfileSettings() {
-            document.getElementById('profileModal').classList.add('hidden');
+            
+            const theme = document.body.getAttribute('data-theme');
+            document.getElementById('themeValue').textContent = theme === 'dark' ? 'Qorong\'u' : 'Yorug\'';
         }
         
         async function saveProfile() {
@@ -1094,13 +1287,30 @@
                 
                 const data = await response.json();
                 if (data.success) {
-                    closeProfileSettings();
                     await checkUser();
                     tg.showAlert("✅ Profil saqlandi!");
                 }
             } catch (error) {
                 tg.showAlert('Xatolik');
             }
+        }
+        
+        function toggleTheme() {
+            const current = document.body.getAttribute('data-theme');
+            const newTheme = current === 'dark' ? 'light' : 'dark';
+            document.body.setAttribute('data-theme', newTheme);
+            document.getElementById('themeValue').textContent = newTheme === 'dark' ? 'Qorong\'u' : 'Yorug\'';
+            localStorage.setItem('theme', newTheme);
+        }
+        
+        function changeLanguage() {
+            currentLang = document.getElementById('languageSelect').value;
+            
+            fetch('/api/user/' + userId, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ language: currentLang })
+            });
         }
         
         async function loadStatistics() {
@@ -1144,30 +1354,6 @@
             }
         }
         
-        function changeLanguage() {
-            currentLang = document.getElementById('languageSelect').value;
-            updateLanguage();
-            
-            fetch('/api/user/' + userId, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ language: currentLang })
-            });
-        }
-        
-        function updateLanguage() {
-            const t = translations[currentLang];
-            document.querySelectorAll('[data-i18n]').forEach(function(el) {
-                const key = el.getAttribute('data-i18n');
-                if (t[key]) el.textContent = t[key];
-            });
-        }
-        
-        function toggleTheme() {
-            const current = document.body.getAttribute('data-theme');
-            document.body.setAttribute('data-theme', current === 'dark' ? 'light' : 'dark');
-        }
-        
         function showNotification(message) {
             const div = document.createElement('div');
             div.className = 'notification';
@@ -1176,12 +1362,10 @@
             setTimeout(function() { div.remove(); }, 3000);
         }
         
-        // Modal tashqarisiga bosganda yopish
-        window.onclick = function(event) {
-            const modal = document.getElementById('profileModal');
-            if (event.target === modal) {
-                closeProfileSettings();
-            }
+        // Load saved theme
+        const savedTheme = localStorage.getItem('theme');
+        if (savedTheme) {
+            document.body.setAttribute('data-theme', savedTheme);
         }
     </script>
 </body>
