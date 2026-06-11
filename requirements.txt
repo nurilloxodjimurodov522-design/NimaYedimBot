@@ -3,3 +3,5 @@ python-telegram-bot
 google-generativeai
 python-dotenv
 werkzeug
+flask-sqlalchemy
+psycopg2-binary
