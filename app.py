@@ -1,6 +1,6 @@
 """
 NimaYedimBot - Professional Kaloriya Tracker
-Database: PostgreSQL | AI: Gemini 2.0 Flash
+Database: PostgreSQL | AI: Gemini 3.5 Flash + Qwen
 """
 
 import os
@@ -10,6 +10,10 @@ from datetime import datetime, timedelta
 from flask import Flask, render_template, request, jsonify
 from dotenv import load_dotenv
 import google.generativeai as genai
+
+# DashScope (Qwen AI)
+import dashscope
+from dashscope import Generation
 
 # Telegram
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
@@ -41,15 +45,22 @@ else:
     logger.error("❌ DATABASE_URL not set!")
     raise ValueError("DATABASE_URL required")
 
-# Gemini AI
+# Gemini AI (ovqat kaloriyasi uchun)
 GEMINI_API_KEY = os.getenv('GEMINI_API_KEY')
 genai.configure(api_key=GEMINI_API_KEY)
 try:
     model = genai.GenerativeModel('gemini-3.5-flash')
 except:
-    model = genai.GenerativeModel('gemini-3.5-flash')
-
+    model = genai.GenerativeModel('gemini-2.0-flash-exp')
 logger.info("✅ Gemini 3.5 Flash AI initialized")
+
+# DashScope (Qwen - AI Dietolog uchun)
+DASHSCOPE_API_KEY = os.getenv('DASHSCOPE_API_KEY')
+if DASHSCOPE_API_KEY:
+    dashscope.api_key = DASHSCOPE_API_KEY
+    logger.info("✅ Qwen AI (DashScope) initialized")
+else:
+    logger.warning("⚠️ DASHSCOPE_API_KEY not set - AI Dietolog ishlamaydi")
 
 # Admin users
 ADMIN_USERS = os.getenv('ADMIN_USERS', '').split(',')
@@ -130,7 +141,6 @@ def calculate_daily_norm(weight, height, age, gender, goal):
         return 2000
 
 def is_user_blocked(user_id):
-    """Foydalanuvchi bloklanganmi tekshirish"""
     with app.app_context():
         user = User.query.get(user_id)
         return user.is_blocked if user else False
@@ -478,10 +488,11 @@ def get_statistics(user_id):
         'period_days': days
     })
 
-# ================= AI CHAT =================
+# ================= AI CHAT (Qwen) =================
 
 @app.route('/api/ai/chat', methods=['POST'])
 def ai_chat():
+    """AI Dietolog - Qwen modeli bilan"""
     data = request.json
     message = data.get('message')
     user_id = data.get('user_id')
@@ -491,6 +502,20 @@ def ai_chat():
     if not user:
         return jsonify({'success': False, 'error': 'User not found'}), 404
     
+    # Foydalanuvchi ma'lumotlari
+    user_info = f"""
+Foydalanuvchi ma'lumotlari:
+- Ism: {user.name}
+- Vazn: {user.weight}kg
+- Boy: {user.height}cm
+- Yosh: {user.age}
+- Maqsad: {user.goal}
+- Kunlik norma: {context.get('daily_norm', user.daily_calorie_norm)} kcal
+- Bugun yegan: {context.get('consumed', 0)} kcal
+- Qolgan: {context.get('remaining', 0)} kcal
+"""
+    
+    # Tizim prompti (faqat dietologiya)
     system_prompt = """Siz professional dietologsiz. Faqat quyidagi mavzularda javob bering:
 - Kaloriya hisoblash va parhez
 - Suv iste'moli va suv rejimi
@@ -498,32 +523,33 @@ def ai_chat():
 - Sog'lom ovqatlanish
 - Mashg'ulot va kaloriya yo'qotish
 - Vitaminlar va minerallar
+- O'zbek va rus taomlari haqida maslahatlar
 
 Agar foydalanuvchi boshqa mavzuda so'rasa, nazokat bilan bu mavzuda gapira olmasligingizni ayting va dietologiya mavzulariga qayting.
-"""
-    
-    prompt = f"""
-Foydalanuvchi ma'lumotlari:
-- Ism: {user.name}
-- Vazn: {user.weight}kg
-- Maqsad: {user.goal}
-- Kunlik norma: {context.get('daily_norm', user.daily_calorie_norm)} kcal
-- Bugun yegan: {context.get('consumed', 0)} kcal
-- Qolgan: {context.get('remaining', 0)} kcal
 
-Foydalanuvchining savoli: {message}
-
-{system_prompt}
-
-Javob qisqa va aniq bo'lsin (2-4 gap).
+Javob qisqa, aniq va foydali bo'lsin (3-5 gap). Emojilardan foydalaning.
 """
     
     try:
-        response = model.generate_content(prompt)
-        return jsonify({
-            'success': True,
-            'response': response.text.strip()
-        })
+        response = Generation.call(
+            model='qwen-max',
+            messages=[
+                {'role': 'system', 'content': system_prompt},
+                {'role': 'user', 'content': user_info + '\n\nSavol: ' + message}
+            ],
+            result_format='message'
+        )
+        
+        if response.status_code == 200:
+            ai_response = response.output.choices[0].message.content
+            return jsonify({
+                'success': True,
+                'response': ai_response
+            })
+        else:
+            logger.error(f"Qwen error: {response.message}")
+            return jsonify({'success': False, 'error': response.message}), 500
+            
     except Exception as e:
         logger.error(f"AI chat error: {e}")
         return jsonify({'success': False, 'error': str(e)}), 500
@@ -581,13 +607,11 @@ TELEGRAM_BOT_TOKEN = os.getenv('TELEGRAM_BOT_TOKEN')
 WEB_APP_URL = os.getenv('WEB_APP_URL', 'https://nimayedimbot-pro-production.up.railway.app')
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Bot start handler - chiroyli xabar bilan"""
     user_id = str(update.effective_user.id)
     user_name = update.effective_user.first_name
     
     logger.info(f"User {user_id} started the bot")
     
-    # Flask application context ichida ishlash
     with app.app_context():
         if is_user_blocked(user_id):
             await update.message.reply_text("❌ Siz bloklangan foydalanuvchisiz.")
@@ -596,7 +620,6 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         user = User.query.get(user_id)
         lang = user.language if user else 'uz'
     
-    # Chiroyli inline keyboard
     keyboard = [[InlineKeyboardButton("📱 Ilovani Ochish", web_app={"url": WEB_APP_URL})]]
     reply_markup = InlineKeyboardMarkup(keyboard)
     
@@ -605,7 +628,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 👋 *Добро пожаловать, {user_name}!*
 
 🍏 *Kaloriya Tracker Pro*
-🤖 Powered by Gemini 2.0 AI
+🤖 Powered by Gemini 3.5 Flash + Qwen AI
 
 📊 *Возможности:*
 • 🍔 AI подсчет калорий
@@ -618,20 +641,20 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         """
     else:
         text = f"""
- *Xush kelibsiz, {user_name}!*
+👋 *Xush kelibsiz, {user_name}!*
 
 🔥 *Kaloriya Tracker Pro*
-✨ Powered by Gemini 2.0 AI
+✨ Gemini 3.5 Flash + Qwen AI
 
 📊 *Imkoniyatlar:*
 • 🍔 AI bilan kaloriya hisoblash
 • 💧 Suv ichish trackeri
-•  Mashg'ulotlarni kuzatish
+• 🏃 Mashg'ulotlarni kuzatish
 • 📈 Chiroyli statistika
 • 💡 AI dietolog maslahatlari
 • ⚖️ Vazn monitoringi
 
- *Maqsadingiz sari birinchi qadam!*
+🎯 *Maqsadingiz sari birinchi qadam!*
 
 Quyidagi tugmani bosing va boshlang:
         """
@@ -649,11 +672,11 @@ async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     
     if is_admin(user_id):
         text = """
- *Foydalanuvchi buyruqlar:*
+📱 *Foydalanuvchi buyruqlar:*
 /start - Boshlash
 /help - Yordam
 
-👨‍💼 *Admin buyruqlar:*
+‍💼 *Admin buyruqlar:*
 /admin - Admin panel
 /users - Foydalanuvchilar ro'yxati
 /block <id> - Bloklash
@@ -662,14 +685,12 @@ async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         """
     else:
         text = """
-📱 *Buyruqlar:*
+ *Buyruqlar:*
 /start - Boshlash
 /help - Yordam
         """
     
     await update.message.reply_text(text, parse_mode='Markdown')
-
-# ================= ADMIN COMMANDS =================
 
 async def admin_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = str(update.effective_user.id)
@@ -689,7 +710,7 @@ async def admin_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 • Jami foydalanuvchilar: {total_users}
 • Jami ovqatlar: {food_count}
 
-🔗 *Web Admin Panel:*
+ *Web Admin Panel:*
 {WEB_APP_URL}/admin
     """
     
@@ -717,7 +738,7 @@ async def block_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = str(update.effective_user.id)
     
     if not is_admin(user_id):
-        await update.message.reply_text("❌ Siz admin emassiz!")
+        await update.message.reply_text(" Siz admin emassiz!")
         return
     
     if not context.args:
@@ -731,7 +752,7 @@ async def block_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
             db.session.commit()
             await update.message.reply_text(f"✅ Foydalanuvchi {context.args[0]} bloklandi!")
         else:
-            await update.message.reply_text("❌ Foydalanuvchi topilmadi!")
+            await update.message.reply_text(" Foydalanuvchi topilmadi!")
 
 async def unblock_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = str(update.effective_user.id)
@@ -757,7 +778,7 @@ async def broadcast_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = str(update.effective_user.id)
     
     if not is_admin(user_id):
-        await update.message.reply_text("❌ Siz admin emassiz!")
+        await update.message.reply_text(" Siz admin emassiz!")
         return
     
     if not context.args:
@@ -794,7 +815,7 @@ if __name__ == '__main__':
     logger.info("=" * 60)
     logger.info("🍏 NimaYedimBot - Professional Kaloriya Tracker")
     logger.info("🗄️  Database: PostgreSQL")
-    logger.info("✨ Gemini 2.0 Flash AI")
+    logger.info("✨ Gemini 3.5 Flash + Qwen AI")
     logger.info("=" * 60)
     
     with app.app_context():
@@ -805,7 +826,7 @@ if __name__ == '__main__':
     flask_thread.start()
     logger.info("✅ Flask started")
     
-    logger.info(" Starting Telegram Bot...")
+    logger.info("🤖 Starting Telegram Bot...")
     
     try:
         application = Application.builder().token(TELEGRAM_BOT_TOKEN).build()
@@ -819,7 +840,7 @@ if __name__ == '__main__':
         application.add_handler(CommandHandler("broadcast", broadcast_command))
         
         logger.info("🤖 Bot running...")
-        logger.info(f"‍💼 Admin users: {ADMIN_USERS}")
+        logger.info(f"👨💼 Admin users: {ADMIN_USERS}")
         application.run_polling(drop_pending_updates=True)
     except Exception as e:
         logger.error(f"Bot error: {e}")
