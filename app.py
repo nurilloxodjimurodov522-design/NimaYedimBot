@@ -532,7 +532,7 @@ Javob qisqa, aniq va foydali bo'lsin (3-5 gap). Emojilardan foydalaning.
     
     try:
         response = Generation.call(
-            model='qwen-max',
+            model='qwen-plus',
             messages=[
                 {'role': 'system', 'content': system_prompt},
                 {'role': 'user', 'content': user_info + '\n\nSavol: ' + message}
